@@ -19,7 +19,7 @@ const LEGACY_BAD_URL_FRAGMENTS = [
 // 기본 Apps Script /exec URL입니다.
 // 보기 전용 기기에서는 관리자 설정 없이 이 주소로 Google Sheets 최신 데이터를 불러옵니다.
 // v0.9부터는 브라우저 localStorage에 남아 있는 과거 URL보다 이 기본 URL을 우선합니다.
-const DEFAULT_SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec';
+const DEFAULT_SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbyY2fIuUMt5al5Mh5ZeooAdYXD29gKvzEWRmoze8mZENnoSh8_DgANmcV1SwkUQ-IMfYQ/exec';
 
 const CONFIG = {
   SHEETS_API_URL: DEFAULT_SHEETS_API_URL,
