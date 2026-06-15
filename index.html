@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>하람 퇴근 캘린더 · Google Sheets v016</title>
+  <title>하람 퇴근 캘린더 · Google Sheets v017</title>
   <style>
     :root{
       --bg:#eef2f7;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;
@@ -34,7 +34,7 @@
   <div class="toast" id="toast"><div class="toast-row"><span id="toastText">구글 스프레드시트 DB 불러오는 중 . . .</span><span id="toastPct">0%</span></div><div class="progress"><i id="toastBar"></i></div></div>
   <main class="app">
     <section class="hero">
-      <div class="hero-top"><div><div class="eyebrow">FAMILY LEAVE CALENDAR · GITHUB SHEETS v016</div><h1>하람 퇴근 캘린더</h1><p>오늘 퇴근 시간과 월간 퇴근 예정만 간단히 확인합니다.</p></div><div class="hero-actions"><button class="btn ghost" id="reloadBtn">시트 새로고침</button><button class="btn primary" id="adminBtn">관리자</button></div></div>
+      <div class="hero-top"><div><div class="eyebrow">FAMILY LEAVE CALENDAR · GITHUB SHEETS v017</div><h1>하람 퇴근 캘린더</h1><p>오늘 퇴근 시간과 월간 퇴근 예정만 간단히 확인합니다.</p></div><div class="hero-actions"><button class="btn ghost" id="reloadBtn">시트 새로고침</button><button class="btn primary" id="adminBtn">관리자</button></div></div>
     </section>
     <section class="admin" id="adminPanel">
       <h2>Google Sheets 저장 설정</h2>
@@ -52,10 +52,10 @@
   <script>
   (()=>{
     'use strict';
-    const VERSION='v016';
+    const VERSION='v017';
     const API_URL='https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec';
-    const CACHE_KEY='haram-leave-calendar-cache-v016';
-    const OLD_CACHE_KEYS=['haram-leave-calendar-cache-v015','haram-leave-calendar-cache-v014','haram-leave-calendar-cache-v013','haram-leave-calendar-cache-v012','haram-leave-calendar-cache-v011'];
+    const CACHE_KEY='haram-leave-calendar-cache-v017';
+    const OLD_CACHE_KEYS=['haram-leave-calendar-cache-v016','haram-leave-calendar-cache-v015','haram-leave-calendar-cache-v014','haram-leave-calendar-cache-v013','haram-leave-calendar-cache-v012','haram-leave-calendar-cache-v011'];
     const TOKEN_KEY='haram-leave-calendar-write-token';
     const DOW=['일','월','화','수','목','금','토'];
     const DOW_MON=['월','화','수','목','금','토','일'];
@@ -114,6 +114,34 @@
         document.head.appendChild(script);
       });
     }
+    function apiFrameLoad(params, timeoutMs=15000){
+      return new Promise((resolve,reject)=>{
+        const requestId='load_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+        const url=new URL(API_URL);
+        url.searchParams.set('action','frame');
+        url.searchParams.set('op','load');
+        url.searchParams.set('requestId',requestId);
+        url.searchParams.set('_',Date.now());
+        const iframe=document.createElement('iframe');
+        iframe.style.display='none';
+        iframe.setAttribute('aria-hidden','true');
+        let done=false;
+        const cleanup=()=>{ window.removeEventListener('message',onMessage); iframe.remove(); clearTimeout(timer); };
+        const timer=setTimeout(()=>{ if(done) return; done=true; cleanup(); reject(new Error('Apps Script iframe 응답 시간 초과')); },timeoutMs);
+        const onMessage=(event)=>{
+          const msg=event.data||{};
+          if(!msg || msg.source!=='haram-leave-calendar-appscript' || msg.requestId!==requestId) return;
+          done=true; cleanup();
+          const json=msg.response || msg.payload || msg;
+          if(!json || json.ok===false) reject(new Error((json&&json.error)||'API 오류'));
+          else resolve(json);
+        };
+        window.addEventListener('message',onMessage);
+        iframe.onerror=()=>{ if(done) return; done=true; cleanup(); reject(new Error('Apps Script iframe 로드 실패')); };
+        iframe.src=url.toString();
+        document.body.appendChild(iframe);
+      });
+    }
     function apiPostFrame(action, body, timeoutMs=18000){
       return new Promise((resolve,reject)=>{
         const requestId='save_'+Date.now()+'_'+Math.random().toString(36).slice(2);
@@ -143,7 +171,13 @@
         document.body.appendChild(iframe); document.body.appendChild(form); form.submit();
       });
     }
-    async function apiGet(params){ return await apiJsonp(params); }
+    async function apiGet(params){
+      try { return await apiFrameLoad(params); }
+      catch(frameErr){
+        try { return await apiJsonp(params); }
+        catch(jsonpErr){ throw new Error('Apps Script 로드 실패: iframe='+(frameErr.message||frameErr)+' / jsonp='+(jsonpErr.message||jsonpErr)); }
+      }
+    }
     async function apiPost(action, body){ return await apiPostFrame(action, body); }
     async function loadFromSheet(){ return withProgress('구글 스프레드시트 DB 불러오는 중',async()=>{ const json=await apiGet({action:'loadAll'}); const data=normalizeData(json.attendance||json.data||json.payload); if(!data) throw new Error('유효한 근태 JSON 행이 없습니다'); cacheSet(data); render(data,'sheet'); return data; }); }
     function parseInput(){ const raw=$('jsonInput').value.trim(); if(!raw) throw new Error('붙여넣은 JSON이 없습니다'); const parsed=JSON.parse(raw); const data=normalizeData(parsed); if(!data) throw new Error('items 배열이 있는 근태 JSON이 아닙니다'); return data; }
