@@ -1,25 +1,21 @@
-# 하람 퇴근 캘린더 v013
+하람 퇴근 캘린더 v014
 
-메이플 장부 구조를 기준으로 재정리한 GitHub Pages + Google Sheets DB 버전입니다.
+구조:
+- GitHub Pages: index.html 단일 파일 프론트엔드
+- Google Apps Script: API 전용
+- Google Sheets: AttendanceDB 시트 DB
 
-## GitHub에 올릴 파일
+GitHub에 올릴 파일:
 - index.html
 
-이번 버전은 캐시 꼬임을 줄이기 위해 CSS/JS를 모두 index.html 안에 넣은 단일 HTML 구조입니다.
+Apps Script에 붙여넣을 파일:
+- Code.gs.txt
 
-## Apps Script에 붙여넣을 파일
-- Code.gs.txt 전체 복사 → Apps Script의 Code.gs에 붙여넣기
+중요 변경:
+- v013의 fetch 방식은 일부 환경에서 CORS/redirect 문제로 Failed to fetch가 발생할 수 있어 제거했습니다.
+- v014는 읽기(loadAll)를 JSONP로 처리합니다.
+- 저장(saveAttendance)은 긴 JSON URL 제한을 피하기 위해 hidden iframe POST + postMessage 방식으로 처리합니다.
+- localStorage 캐시는 v014 우선, v013/v012/v011 캐시도 자동 승계합니다.
 
-## 기본 API URL
-https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec
-
-## 핵심 구조
-GitHub Pages(index.html) → Apps Script Web App API → Google Sheets(AttendanceDB)
-
-## Apps Script 배포 설정
-- 실행 사용자: 나
-- 액세스 권한: 모든 사용자
-- URL 끝: /exec
-
-## 확인 주소
-https://hossea123456789-design.github.io/haram-leave-calendar/?v=013
+배포 후 접속:
+https://hossea123456789-design.github.io/haram-leave-calendar/?v=014

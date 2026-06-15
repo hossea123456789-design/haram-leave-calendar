@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>하람 퇴근 캘린더 · Google Sheets v013</title>
+  <title>하람 퇴근 캘린더 · Google Sheets v014</title>
   <style>
     :root{
       --bg:#eef2f7;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;
@@ -26,7 +26,7 @@
   <div class="toast" id="toast"><div class="toast-row"><span id="toastText">구글 스프레드시트 DB 불러오는 중 . . .</span><span id="toastPct">0%</span></div><div class="progress"><i id="toastBar"></i></div></div>
   <main class="app">
     <section class="hero">
-      <div class="hero-top"><div><div class="eyebrow">FAMILY LEAVE CALENDAR · GITHUB SHEETS v013</div><h1>하람 퇴근 캘린더</h1><p>GitHub Pages 화면에서 Google Sheets DB를 불러와 최신 퇴근 시간을 확인합니다.</p></div><div class="hero-actions"><button class="btn ghost" id="reloadBtn">시트 새로고침</button><button class="btn primary" id="adminBtn">관리자</button></div></div>
+      <div class="hero-top"><div><div class="eyebrow">FAMILY LEAVE CALENDAR · GITHUB SHEETS v014</div><h1>하람 퇴근 캘린더</h1><p>GitHub Pages 화면에서 Google Sheets DB를 불러와 최신 퇴근 시간을 확인합니다.</p></div><div class="hero-actions"><button class="btn ghost" id="reloadBtn">시트 새로고침</button><button class="btn primary" id="adminBtn">관리자</button></div></div>
     </section>
     <section class="admin" id="adminPanel">
       <h2>Google Sheets 저장 설정</h2>
@@ -44,9 +44,10 @@
   <script>
   (()=>{
     'use strict';
-    const VERSION='v013';
+    const VERSION='v014';
     const API_URL='https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec';
-    const CACHE_KEY='haram-leave-calendar-cache-v013';
+    const CACHE_KEY='haram-leave-calendar-cache-v014';
+    const OLD_CACHE_KEYS=['haram-leave-calendar-cache-v013','haram-leave-calendar-cache-v012','haram-leave-calendar-cache-v011'];
     const TOKEN_KEY='haram-leave-calendar-write-token';
     const DOW=['일','월','화','수','목','금','토'];
     const DOW_MON=['월','화','수','목','금','토','일'];
@@ -85,14 +86,60 @@
     function weekHtml(data){ const map=itemMap(data); const now=new Date(); const start=new Date(now); start.setDate(now.getDate()-now.getDay()); const cards=[]; for(let i=0;i<7;i++){ const d=new Date(start); d.setDate(start.getDate()+i); const key=toDateKey(d.getFullYear(),d.getMonth()+1,d.getDate()); const it=map.get(key); cards.push(`<div class="week-card"><div class="date-row"><b>${DOW[i]}</b><span class="weekday">${d.getMonth()+1}/${d.getDate()}</span></div><div class="main-time ${classifyLeave(it?.leave,it?.type)}" style="font-size:24px;margin:14px 0 6px">${displayText(it)}</div><div class="detail">${typeText(it)}</div></div>`); }
       return `<section class="panel"><div class="panel-head"><div><small class="eyebrow" style="color:#6b7280">THIS WEEK</small><h2>이번 주 퇴근 요약</h2></div></div><div class="week-list">${cards.join('')}</div></section>`; }
     function cacheSet(data){ try{localStorage.setItem(CACHE_KEY,JSON.stringify({savedAt:new Date().toISOString(),data}));}catch(e){} }
-    function cacheGet(){ try{const raw=localStorage.getItem(CACHE_KEY); if(!raw) return null; return normalizeData(JSON.parse(raw).data);}catch(e){return null;} }
+    function cacheGet(){ const keys=[CACHE_KEY,...OLD_CACHE_KEYS]; for(const key of keys){ try{const raw=localStorage.getItem(key); if(!raw) continue; const data=normalizeData(JSON.parse(raw).data); if(data){ if(key!==CACHE_KEY) cacheSet(data); return data; }}catch(e){} } return null; }
     function toast(kind,text,pct=0,hold=0){ const t=$('toast'), bar=$('toastBar'); t.className='toast show '+(kind||''); $('toastText').textContent=text; $('toastPct').textContent=Math.round(pct)+'%'; bar.style.width=Math.max(0,Math.min(100,pct))+'%'; if(hold){clearTimeout(toast._timer); toast._timer=setTimeout(()=>t.classList.remove('show'),hold);} }
     async function withProgress(label, task){ let p=0; toast('',label+' . . .',0); const timer=setInterval(()=>{p=Math.min(94,p+Math.max(1,Math.round((95-p)*0.12))); toast('',label+' . . .',p);},180); try{const res=await task(); clearInterval(timer); toast('success',label+' 완료',100,1800); return res;}catch(e){clearInterval(timer); toast('error',label+' 실패: '+(e.message||e),100,5200); throw e;} }
-    async function apiGet(params){ const url=new URL(API_URL); Object.entries(params||{}).forEach(([k,v])=>url.searchParams.set(k,v)); url.searchParams.set('_',Date.now()); const res=await fetch(url.toString(),{method:'GET',cache:'no-store',redirect:'follow'}); if(!res.ok) throw new Error('HTTP '+res.status); const json=await res.json(); if(!json.ok) throw new Error(json.error||'API 오류'); return json; }
-    async function apiPost(action, body){ const payload={action,...body}; const res=await fetch(API_URL,{method:'POST',cache:'no-store',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); if(!res.ok) throw new Error('HTTP '+res.status); const json=await res.json(); if(!json.ok) throw new Error(json.error||'API 오류'); return json; }
+    function apiJsonp(params, timeoutMs=12000){
+      return new Promise((resolve,reject)=>{
+        const cb='__haramLeaveJsonp_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+        const url=new URL(API_URL);
+        Object.entries(params||{}).forEach(([k,v])=>url.searchParams.set(k,v));
+        url.searchParams.set('callback',cb);
+        url.searchParams.set('_',Date.now());
+        const script=document.createElement('script');
+        let done=false;
+        const cleanup=()=>{ try{delete window[cb];}catch(e){window[cb]=undefined;} script.remove(); clearTimeout(timer); };
+        const timer=setTimeout(()=>{ if(done) return; done=true; cleanup(); reject(new Error('Apps Script 응답 시간 초과')); },timeoutMs);
+        window[cb]=(json)=>{ if(done) return; done=true; cleanup(); if(!json||json.ok===false) reject(new Error((json&&json.error)||'API 오류')); else resolve(json); };
+        script.onerror=()=>{ if(done) return; done=true; cleanup(); reject(new Error('Apps Script 스크립트 로드 실패')); };
+        script.src=url.toString();
+        document.head.appendChild(script);
+      });
+    }
+    function apiPostFrame(action, body, timeoutMs=18000){
+      return new Promise((resolve,reject)=>{
+        const requestId='save_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+        const iframe=document.createElement('iframe');
+        iframe.name='haramSaveFrame_'+requestId;
+        iframe.style.display='none';
+        const form=document.createElement('form');
+        form.method='POST';
+        form.action=API_URL;
+        form.target=iframe.name;
+        form.style.display='none';
+        const add=(name,value)=>{ const input=document.createElement('input'); input.type='hidden'; input.name=name; input.value=typeof value==='string'?value:JSON.stringify(value); form.appendChild(input); };
+        add('action',action); add('requestId',requestId);
+        Object.entries(body||{}).forEach(([k,v])=>add(k,v));
+        let done=false;
+        const cleanup=()=>{ window.removeEventListener('message',onMessage); form.remove(); iframe.remove(); clearTimeout(timer); };
+        const timer=setTimeout(()=>{ if(done) return; done=true; cleanup(); reject(new Error('Apps Script 저장 응답 시간 초과')); },timeoutMs);
+        const onMessage=(event)=>{
+          const msg=event.data||{};
+          if(!msg || msg.source!=='haram-leave-calendar-appscript' || msg.requestId!==requestId) return;
+          done=true; cleanup();
+          const json=msg.response || msg;
+          if(!json.ok) reject(new Error(json.error||'저장 실패'));
+          else resolve(json);
+        };
+        window.addEventListener('message',onMessage);
+        document.body.appendChild(iframe); document.body.appendChild(form); form.submit();
+      });
+    }
+    async function apiGet(params){ return await apiJsonp(params); }
+    async function apiPost(action, body){ return await apiPostFrame(action, body); }
     async function loadFromSheet(){ return withProgress('구글 스프레드시트 DB 불러오는 중',async()=>{ const json=await apiGet({action:'loadAll'}); const data=normalizeData(json.attendance||json.data||json.payload); if(!data) throw new Error('유효한 근태 JSON 행이 없습니다'); cacheSet(data); render(data,'sheet'); return data; }); }
     function parseInput(){ const raw=$('jsonInput').value.trim(); if(!raw) throw new Error('붙여넣은 JSON이 없습니다'); const parsed=JSON.parse(raw); const data=normalizeData(parsed); if(!data) throw new Error('items 배열이 있는 근태 JSON이 아닙니다'); return data; }
-    async function saveToSheet(){ const data=parseInput(); const token=$('tokenInput').value.trim(); if(!token) throw new Error('WRITE_TOKEN을 입력해 주세요'); await withProgress('구글 스프레드시트 DB 저장 중',async()=>{ try{return await apiPost('saveAttendance',{token,payload:data});} catch(e){ const url=new URL(API_URL); url.searchParams.set('action','saveAttendance'); url.searchParams.set('token',token); url.searchParams.set('payload',JSON.stringify(data)); url.searchParams.set('_',Date.now()); if(url.toString().length>18000) throw e; const r=await fetch(url.toString(),{cache:'no-store'}); const j=await r.json(); if(!j.ok) throw new Error(j.error||'GET 저장 실패'); return j; }}); cacheSet(data); render(data,'saved'); $('jsonInput').value=''; $('adminStatus').className='status-line ok'; $('adminStatus').textContent='Google Sheets 저장 완료'; }
+    async function saveToSheet(){ const data=parseInput(); const token=$('tokenInput').value.trim(); if(!token) throw new Error('WRITE_TOKEN을 입력해 주세요'); await withProgress('구글 스프레드시트 DB 저장 중',async()=> await apiPost('saveAttendance',{token,payload:data})); cacheSet(data); render(data,'saved'); $('jsonInput').value=''; $('adminStatus').className='status-line ok'; $('adminStatus').textContent='Google Sheets 저장 완료'; }
     function bind(){ $('apiUrlInput').value=API_URL; $('tokenInput').value=localStorage.getItem(TOKEN_KEY)||''; $('adminBtn').onclick=()=>$('adminPanel').classList.toggle('show'); $('reloadBtn').onclick=()=>loadFromSheet().catch(()=>{}); $('loadBtn').onclick=()=>loadFromSheet().catch(e=>{setAdminErr(e.message)}); $('saveSettingsBtn').onclick=()=>{localStorage.setItem(TOKEN_KEY,$('tokenInput').value.trim()); setAdminOk('토큰 저장 완료')}; $('clearAdminBtn').onclick=()=>{localStorage.removeItem(TOKEN_KEY); $('tokenInput').value=''; setAdminOk('브라우저 저장 삭제 완료')}; $('previewBtn').onclick=()=>{try{const d=parseInput(); render(d,'preview'); setAdminOk('화면 미리보기 완료')}catch(e){setAdminErr(e.message)}}; $('saveBtn').onclick=()=>saveToSheet().catch(e=>setAdminErr(e.message)); $('clearInputBtn').onclick=()=>$('jsonInput').value=''; $('jsonInput').addEventListener('paste',e=>{const txt=(e.clipboardData||window.clipboardData).getData('text'); if(txt&&txt.trim().startsWith('{')){e.preventDefault(); $('jsonInput').value=txt;}}); $('jsonInput').addEventListener('focus',()=>{if($('jsonInput').value) $('jsonInput').select();}); }
     function setAdminOk(msg){$('adminStatus').className='status-line ok';$('adminStatus').textContent=msg;} function setAdminErr(msg){$('adminStatus').className='status-line err';$('adminStatus').textContent=msg;}
     function init(){ bind(); const cached=cacheGet(); if(cached) render(cached,'cache'); loadFromSheet().catch(()=>{ if(!cached) render(null,'none'); }); }
