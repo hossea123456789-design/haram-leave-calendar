@@ -1,17 +1,25 @@
-const STORAGE_KEY = 'wifeLeaveCalendar.attendanceJson.v4';
+const APP_VERSION = 'v0.5';
+const STORAGE_KEY = 'wifeLeaveCalendar.attendanceJson.v5';
 const API_URL_STORAGE_KEY = 'wifeLeaveCalendar.googleScriptUrl.v2';
 const WRITE_TOKEN_STORAGE_KEY = 'wifeLeaveCalendar.writeToken.v2';
 
 // GitHub Pages에 올리기 전 Apps Script /exec URL을 여기에 넣으면
 // 와이프 휴대폰에서도 별도 설정 없이 자동으로 Google Sheets 최신 데이터를 불러옵니다.
 const CONFIG = {
-  SHEETS_API_URL: 'https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec',
+  SHEETS_API_URL: '',
   AUTO_LOAD_FROM_SHEETS: true,
 };
 
 const state = {
   data: null,
   lastSyncAt: null,
+};
+
+const loadingState = {
+  timer: null,
+  value: 0,
+  total: 250,
+  label: '구글 스프레드시트 DB 불러오는 중',
 };
 
 const els = {};
@@ -72,6 +80,10 @@ function collectElements() {
     calendarGrid: byId('calendarGrid'),
     weekList: byId('weekList'),
     rawJson: byId('rawJson'),
+    loadingOverlay: document.getElementById('loadingOverlay'),
+    loadingTitle: document.getElementById('loadingTitle'),
+    loadingDetail: document.getElementById('loadingDetail'),
+    loadingBar: document.getElementById('loadingBar'),
     toast: byId('toast'),
   });
 }
@@ -95,7 +107,25 @@ function bindEvents() {
     els.jsonInput.value = '';
     setImportResult('입력창을 비웠습니다.');
   });
+
+  // 기존 JSON을 지우고 다시 붙여넣는 번거로움을 없애기 위해,
+  // 붙여넣기 시 입력창 내용을 항상 새 JSON으로 통째로 교체합니다.
+  els.jsonInput.addEventListener('paste', handleJsonInputPaste);
+  els.jsonInput.addEventListener('focus', () => {
+    if (els.jsonInput.value.trim()) {
+      window.setTimeout(() => els.jsonInput.select(), 0);
+    }
+  });
 }
+
+function handleJsonInputPaste(event) {
+  const text = event.clipboardData?.getData('text/plain') || '';
+  if (!text) return;
+  event.preventDefault();
+  els.jsonInput.value = text.trim();
+  setImportResult('새 JSON으로 입력창을 교체했습니다. 이제 바로 미리보기 또는 시트 저장을 누르면 됩니다.');
+}
+
 
 function hydrateSettings() {
   els.scriptUrlInput.value = normalizeApiUrl(localStorage.getItem(API_URL_STORAGE_KEY) || CONFIG.SHEETS_API_URL || '');
@@ -184,8 +214,9 @@ async function saveJsonToSheets() {
 
   const saved = await saveToSheets(data);
   if (saved) {
+    els.jsonInput.value = '';
     showToast('Google Sheets 저장 완료');
-    setImportResult(buildImportMessage(data, 'Google Sheets에 저장했습니다.'));
+    setImportResult(buildImportMessage(data, 'Google Sheets에 저장했습니다. 입력창은 다음 붙여넣기를 위해 비웠습니다.'));
   }
 }
 
@@ -570,11 +601,13 @@ async function loadFromSheets(options = {}) {
     return null;
   }
 
+  const loading = startLoadingProgress('구글 스프레드시트 DB 불러오는 중', 250);
   updateSyncStatus('Google Sheets에서 최신 데이터를 불러오는 중입니다...');
   try {
     const response = await jsonpRequest(apiUrl, { action: 'load' });
     if (!response || response.ok === false) throw new Error(response?.error || '시트 응답이 올바르지 않습니다.');
     if (!response.data) {
+      finishLoadingProgress(loading, '구글 스프레드시트 DB에 저장된 데이터가 없습니다.', true);
       updateSyncStatus('Google Sheets에 저장된 근태 JSON이 없습니다.', true);
       if (!state.data) showEmpty();
       return null;
@@ -582,10 +615,12 @@ async function loadFromSheets(options = {}) {
     const normalized = normalizeAttendance(response.data);
     state.lastSyncAt = new Date();
     applyData(normalized, { save: true, source: 'Google Sheets' });
+    finishLoadingProgress(loading, '구글 스프레드시트 DB 불러오기 완료');
     updateSyncStatus(`Google Sheets 최신 데이터 불러오기 완료 · ${formatDateTime(state.lastSyncAt.toISOString())}`);
     if (!options.silent) showToast('시트에서 불러왔습니다');
     return normalized;
   } catch (error) {
+    finishLoadingProgress(loading, `구글 스프레드시트 DB 불러오기 실패: ${error.message}`, true);
     updateSyncStatus(`시트 불러오기 실패: ${error.message}`, true);
     if (!options.silent) showToast('시트 불러오기 실패');
     return null;
@@ -607,6 +642,7 @@ async function saveToSheets(data) {
     return false;
   }
 
+  const loading = startLoadingProgress('구글 스프레드시트 DB 저장 중', 250);
   updateSyncStatus('Google Sheets에 저장하는 중입니다...');
   try {
     const payload = encodeBase64Url(JSON.stringify(data));
@@ -635,9 +671,11 @@ async function saveToSheets(data) {
     state.lastSyncAt = new Date();
     const normalized = normalizeAttendance(loaded.data);
     applyData(normalized, { save: true, source: 'Google Sheets 저장 확인' });
+    finishLoadingProgress(loading, '구글 스프레드시트 DB 저장 완료');
     updateSyncStatus(`Google Sheets 저장 완료 · ${formatDateTime(state.lastSyncAt.toISOString())}`);
     return true;
   } catch (error) {
+    finishLoadingProgress(loading, `구글 스프레드시트 DB 저장 실패: ${error.message}`, true);
     updateSyncStatus(`시트 저장 실패: ${error.message}`, true);
     showToast('시트 저장 실패');
     return false;
@@ -688,6 +726,51 @@ function postFormToSheets(apiUrl, fields) {
     submitted = true;
     form.submit();
   });
+}
+
+function startLoadingProgress(label, total = 250) {
+  if (!els.loadingOverlay || !els.loadingTitle || !els.loadingDetail || !els.loadingBar) {
+    return { active: false };
+  }
+
+  window.clearInterval(loadingState.timer);
+  loadingState.value = 0;
+  loadingState.total = total;
+  loadingState.label = label;
+
+  els.loadingTitle.textContent = label;
+  els.loadingOverlay.classList.remove('hidden');
+  els.loadingOverlay.classList.remove('error');
+  updateLoadingProgress(0);
+
+  loadingState.timer = window.setInterval(() => {
+    const remaining = loadingState.total - loadingState.value;
+    if (remaining <= 18) return;
+    const step = Math.max(1, Math.min(17, Math.ceil(remaining * 0.08)));
+    updateLoadingProgress(Math.min(loadingState.value + step, loadingState.total - 12));
+  }, 110);
+
+  return { active: true, label, total };
+}
+
+function updateLoadingProgress(value) {
+  loadingState.value = Math.max(0, Math.min(loadingState.total, Math.round(value)));
+  const text = `${loadingState.label} . . . ( ${loadingState.value} / ${loadingState.total} )`;
+  const percent = loadingState.total ? (loadingState.value / loadingState.total) * 100 : 0;
+  if (els.loadingDetail) els.loadingDetail.textContent = text;
+  if (els.loadingBar) els.loadingBar.style.width = `${percent}%`;
+}
+
+function finishLoadingProgress(handle, message, isError = false) {
+  if (!handle?.active || !els.loadingOverlay) return;
+  window.clearInterval(loadingState.timer);
+  updateLoadingProgress(loadingState.total);
+  if (els.loadingTitle) els.loadingTitle.textContent = message;
+  els.loadingOverlay.classList.toggle('error', Boolean(isError));
+  window.setTimeout(() => {
+    els.loadingOverlay.classList.add('hidden');
+    els.loadingOverlay.classList.remove('error');
+  }, isError ? 1200 : 450);
 }
 
 function delay(ms) {
