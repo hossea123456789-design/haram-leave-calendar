@@ -1,9 +1,9 @@
-const APP_VERSION = 'v0.11';
+const APP_VERSION = 'v0.12';
 const STORAGE_KEY = 'wifeLeaveCalendar.attendanceJson.v5';
 const API_URL_STORAGE_KEY = 'wifeLeaveCalendar.googleScriptUrl.v2';
 const WRITE_TOKEN_STORAGE_KEY = 'wifeLeaveCalendar.writeToken.v2';
 const CACHE_RESET_VERSION_KEY = 'wifeLeaveCalendar.cacheResetVersion';
-const CACHE_RESET_VERSION = '20260615-v011';
+const CACHE_RESET_VERSION = '20260615-v012';
 const LEGACY_API_URL_KEYS = [
   'wifeLeaveCalendar.googleScriptUrl',
   'wifeLeaveCalendar.googleScriptUrl.v1',
@@ -349,9 +349,11 @@ function applyData(data, options = {}) {
   updateSyncStatus(`${options.source || '데이터'} 반영 완료 · ${formatDateTime(new Date().toISOString())}`);
 }
 
-function showEmpty() {
+function showEmpty(message = null) {
   els.emptyState.classList.remove('hidden');
   els.dashboard.classList.add('hidden');
+  const p = els.emptyState.querySelector('p');
+  if (p && message) p.textContent = message;
 }
 
 function showDashboard() {
@@ -704,9 +706,10 @@ async function loadFromSheets(options = {}) {
     const response = await requestSheets(apiUrl, { action: 'load' });
     if (!response || response.ok === false) throw new Error(response?.error || '시트 응답이 올바르지 않습니다.');
     if (!response.data) {
-      finishLoadingProgress(loading, '구글 스프레드시트 DB에 저장된 데이터가 없습니다.', true);
-      updateSyncStatus('Google Sheets에 저장된 근태 JSON이 없습니다.', true);
-      if (!state.data) showEmpty();
+      const detail = response && response.diagnostic ? ` · ${response.diagnostic}` : '';
+      finishLoadingProgress(loading, `구글 스프레드시트 DB는 연결됐지만 유효한 근태 JSON이 없습니다${detail}`, true);
+      updateSyncStatus(`Google Sheets에서 유효한 근태 JSON을 찾지 못했습니다${detail}`, true);
+      if (!state.data) showEmpty('시트에는 연결됐지만 유효한 근태 JSON 행을 찾지 못했습니다. 관리자 기기에서 JSON을 다시 저장해 주세요.');
       return null;
     }
     const normalized = normalizeAttendance(response.data);
@@ -892,7 +895,7 @@ async function requestSheets(baseUrl, params = {}) {
     try {
       return await iframeBridgeRequest(baseUrl, params, firstError);
     } catch (secondError) {
-      const message = `스크립트 로드 실패: ${secondError.message || firstError.message}. Code.gs v011 배포, Apps Script URL, 브라우저 콘텐츠 차단 설정을 확인해 주세요.`;
+      const message = `스크립트 로드 실패: ${secondError.message || firstError.message}. Code.gs v012 배포, Apps Script URL, 브라우저 콘텐츠 차단 설정을 확인해 주세요.`;
       throw new Error(message);
     }
   }
