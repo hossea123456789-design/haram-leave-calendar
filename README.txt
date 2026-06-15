@@ -24,3 +24,13 @@ GitHub 반영:
 
 
 v0.7: 로딩 진행 표시를 화면 우측 상단 고정 토스트로 변경하고, 100% 완료/오류 상태를 최소 시간 유지하도록 수정했습니다.
+
+
+v0.9: 기본 Apps Script URL을 localStorage보다 우선 사용하도록 수정. 삼성 브라우저 등 이전 URL 캐시 문제 완화.
+
+
+v010 변경점:
+- index.html에서 app.js/styles.css/manifest에 ?v=010 캐시 버스터 적용
+- 삼성 브라우저 등에 남은 과거 Apps Script URL localStorage 캐시 자동 정리
+- 기본 Apps Script /exec URL을 localStorage보다 우선 사용
+- 근태 데이터 로컬 캐시는 유지하고 DB 연결 캐시만 초기화

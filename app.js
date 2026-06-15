@@ -1,12 +1,28 @@
-const APP_VERSION = 'v0.7';
+const APP_VERSION = 'v0.10';
 const STORAGE_KEY = 'wifeLeaveCalendar.attendanceJson.v5';
 const API_URL_STORAGE_KEY = 'wifeLeaveCalendar.googleScriptUrl.v2';
 const WRITE_TOKEN_STORAGE_KEY = 'wifeLeaveCalendar.writeToken.v2';
+const CACHE_RESET_VERSION_KEY = 'wifeLeaveCalendar.cacheResetVersion';
+const CACHE_RESET_VERSION = '20260615-v010';
+const LEGACY_API_URL_KEYS = [
+  'wifeLeaveCalendar.googleScriptUrl',
+  'wifeLeaveCalendar.googleScriptUrl.v1',
+  'wifeLeaveCalendar.googleScriptUrl.v2',
+  'wifeLeaveCalendar.scriptUrl',
+  'wifeLeaveCalendar.appsScriptUrl',
+];
+const LEGACY_BAD_URL_FRAGMENTS = [
+  'AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHIRGu1__5yth-oxl4rhc/exec',
+  'AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc/exec',
+];
 
 // 기본 Apps Script /exec URL입니다.
 // 보기 전용 기기에서는 관리자 설정 없이 이 주소로 Google Sheets 최신 데이터를 불러옵니다.
+// v0.9부터는 브라우저 localStorage에 남아 있는 과거 URL보다 이 기본 URL을 우선합니다.
+const DEFAULT_SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec';
+
 const CONFIG = {
-  SHEETS_API_URL: 'https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec',
+  SHEETS_API_URL: DEFAULT_SHEETS_API_URL,
   AUTO_LOAD_FROM_SHEETS: true,
 };
 
@@ -37,6 +53,7 @@ window.addEventListener('DOMContentLoaded', init);
 function init() {
   collectElements();
   bindEvents();
+  resetStaleBrowserState();
   hydrateSettings();
 
   const saved = loadLocalData();
@@ -120,6 +137,51 @@ function bindEvents() {
   });
 }
 
+
+function resetStaleBrowserState() {
+  const current = localStorage.getItem(CACHE_RESET_VERSION_KEY);
+  const defaultUrl = normalizeApiUrl(DEFAULT_SHEETS_API_URL);
+  const removedKeys = [];
+
+  // v010부터는 삼성 브라우저 등에 남아 있던 과거 DB URL을 강제로 제거합니다.
+  // 근태 데이터 캐시는 유지하고, DB 연결 설정만 최신 기본 URL 기준으로 재정렬합니다.
+  LEGACY_API_URL_KEYS.forEach((key) => {
+    const value = localStorage.getItem(key);
+    if (!value) return;
+    const normalized = normalizeApiUrl(value);
+    const isWrong = normalized !== defaultUrl || LEGACY_BAD_URL_FRAGMENTS.some((fragment) => normalized.includes(fragment));
+    if (isWrong || current !== CACHE_RESET_VERSION) {
+      localStorage.removeItem(key);
+      removedKeys.push(key);
+    }
+  });
+
+  if (defaultUrl) {
+    localStorage.setItem(API_URL_STORAGE_KEY, defaultUrl);
+  }
+  localStorage.setItem(CACHE_RESET_VERSION_KEY, CACHE_RESET_VERSION);
+
+  // 혹시 과거 버전에서 Cache API나 service worker가 생겼더라도 정리합니다.
+  // 현재 앱은 service worker를 쓰지 않지만, 삼성 브라우저 캐시 꼬임 방지용 안전장치입니다.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations()
+      .then((registrations) => registrations.forEach((registration) => registration.unregister()))
+      .catch(() => {});
+  }
+  if ('caches' in window) {
+    caches.keys()
+      .then((keys) => keys.filter((key) => key.includes('wife') || key.includes('leave') || key.includes('calendar')).forEach((key) => caches.delete(key)))
+      .catch(() => {});
+  }
+
+  if (removedKeys.length > 0) {
+    window.setTimeout(() => {
+      updateSyncStatus('이 브라우저에 남아 있던 이전 DB 주소 캐시를 정리하고 기본 주소로 교체했습니다.');
+      showToast('이전 DB 주소 캐시 정리 완료');
+    }, 0);
+  }
+}
+
 function handleJsonInputPaste(event) {
   const text = event.clipboardData?.getData('text/plain') || '';
   if (!text) return;
@@ -130,8 +192,25 @@ function handleJsonInputPaste(event) {
 
 
 function hydrateSettings() {
-  els.scriptUrlInput.value = normalizeApiUrl(localStorage.getItem(API_URL_STORAGE_KEY) || CONFIG.SHEETS_API_URL || '');
+  const defaultUrl = normalizeApiUrl(CONFIG.SHEETS_API_URL || '');
+  const storedUrl = normalizeApiUrl(localStorage.getItem(API_URL_STORAGE_KEY) || '');
+  const hadStaleStoredUrl = Boolean(defaultUrl && storedUrl && storedUrl !== defaultUrl);
+
+  // 삼성 브라우저처럼 이전 설정이 남아 있는 브라우저에서
+  // 잘못된 과거 Apps Script URL이 기본 URL을 덮어쓰지 않도록 정리합니다.
+  if (hadStaleStoredUrl) {
+    localStorage.removeItem(API_URL_STORAGE_KEY);
+  }
+
+  els.scriptUrlInput.value = defaultUrl || storedUrl || '';
   els.writeTokenInput.value = localStorage.getItem(WRITE_TOKEN_STORAGE_KEY) || '';
+
+  if (hadStaleStoredUrl) {
+    updateSyncStatus('이 브라우저에 남아 있던 이전 Apps Script URL을 기본 URL로 자동 교체했습니다.');
+    showToast('이전 DB 주소를 기본 주소로 교체했습니다');
+    return;
+  }
+
   updateSyncStatus(getApiUrl() ? 'Apps Script URL이 설정되어 있습니다.' : 'Apps Script URL을 입력하면 Google Sheets와 연동됩니다.');
 }
 
@@ -154,7 +233,23 @@ function saveSettings() {
 }
 
 function getApiUrl() {
-  const raw = (els.scriptUrlInput?.value || localStorage.getItem(API_URL_STORAGE_KEY) || CONFIG.SHEETS_API_URL || '').trim();
+  const defaultUrl = normalizeApiUrl(CONFIG.SHEETS_API_URL || '');
+
+  // 보기 전용 모바일에서는 관리자 설정을 입력하지 않습니다.
+  // 따라서 기본 배포 URL을 최우선으로 사용합니다.
+  // 과거에 저장된 잘못된 URL은 여기서도 한 번 더 무시/정리합니다.
+  if (defaultUrl) {
+    const storedUrl = normalizeApiUrl(localStorage.getItem(API_URL_STORAGE_KEY) || '');
+    if (storedUrl && storedUrl !== defaultUrl) {
+      localStorage.removeItem(API_URL_STORAGE_KEY);
+    }
+    if (els.scriptUrlInput && normalizeApiUrl(els.scriptUrlInput.value) !== defaultUrl) {
+      els.scriptUrlInput.value = defaultUrl;
+    }
+    return defaultUrl;
+  }
+
+  const raw = (els.scriptUrlInput?.value || localStorage.getItem(API_URL_STORAGE_KEY) || '').trim();
   return normalizeApiUrl(raw);
 }
 
@@ -815,7 +910,7 @@ function jsonpRequest(baseUrl, params = {}) {
 
     script.onerror = () => {
       cleanup();
-      reject(new Error('스크립트 로드에 실패했습니다. Apps Script 배포 URL을 확인해 주세요.'));
+      reject(new Error('스크립트 로드에 실패했습니다. Apps Script 배포 URL, 브라우저 캐시, 콘텐츠 차단 설정을 확인해 주세요.'));
     };
     script.src = url.toString();
     document.head.appendChild(script);
