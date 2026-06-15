@@ -1,4 +1,4 @@
-const APP_VERSION = 'v0.6';
+const APP_VERSION = 'v0.7';
 const STORAGE_KEY = 'wifeLeaveCalendar.attendanceJson.v5';
 const API_URL_STORAGE_KEY = 'wifeLeaveCalendar.googleScriptUrl.v2';
 const WRITE_TOKEN_STORAGE_KEY = 'wifeLeaveCalendar.writeToken.v2';
@@ -17,6 +17,8 @@ const state = {
 
 const loadingState = {
   timer: null,
+  hideTimer: null,
+  startedAt: 0,
   value: 0,
   percent: 0,
   label: '구글 스프레드시트 DB 불러오는 중',
@@ -730,20 +732,23 @@ function postFormToSheets(apiUrl, fields) {
 
 function startLoadingProgress(label) {
   window.clearInterval(loadingState.timer);
+  window.clearTimeout(loadingState.hideTimer);
+  loadingState.startedAt = Date.now();
   loadingState.percent = 0;
   loadingState.label = label;
 
   els.heroSyncToast.classList.remove('hidden', 'error', 'done');
+  els.heroSyncToast.setAttribute('data-visible', 'true');
   updateLoadingProgress(0);
 
   loadingState.timer = window.setInterval(() => {
     if (loadingState.percent >= 94) return;
     const remaining = 95 - loadingState.percent;
-    const step = Math.max(1, Math.min(9, Math.ceil(remaining * 0.12)));
+    const step = Math.max(1, Math.min(7, Math.ceil(remaining * 0.1)));
     updateLoadingProgress(Math.min(95, loadingState.percent + step));
-  }, 120);
+  }, 140);
 
-  return { active: true, label };
+  return { active: true, label, startedAt: loadingState.startedAt };
 }
 
 function updateLoadingProgress(percent) {
@@ -758,14 +763,25 @@ function finishLoadingProgress(handle, message, isError = false) {
   if (!handle?.active) return;
   window.clearInterval(loadingState.timer);
   updateLoadingProgress(isError ? Math.max(loadingState.percent, 100) : 100);
-  els.heroSyncText.textContent = message;
-  els.heroSyncPercent.textContent = isError ? '오류' : '완료';
-  els.heroSyncToast.classList.toggle('error', Boolean(isError));
-  els.heroSyncToast.classList.toggle('done', !isError);
-  window.setTimeout(() => {
-    els.heroSyncToast.classList.add('hidden');
-    els.heroSyncToast.classList.remove('error', 'done');
-  }, isError ? 2400 : 1200);
+
+  const elapsed = Date.now() - (handle.startedAt || loadingState.startedAt || Date.now());
+  const minVisibleMs = 900;
+  const finishDelay = Math.max(0, minVisibleMs - elapsed);
+  const holdAfterFinishMs = isError ? 5200 : 2600;
+
+  window.clearTimeout(loadingState.hideTimer);
+  loadingState.hideTimer = window.setTimeout(() => {
+    els.heroSyncText.textContent = message;
+    els.heroSyncPercent.textContent = isError ? '오류' : '완료';
+    els.heroSyncToast.classList.toggle('error', Boolean(isError));
+    els.heroSyncToast.classList.toggle('done', !isError);
+
+    loadingState.hideTimer = window.setTimeout(() => {
+      els.heroSyncToast.classList.add('hidden');
+      els.heroSyncToast.removeAttribute('data-visible');
+      els.heroSyncToast.classList.remove('error', 'done');
+    }, holdAfterFinishMs);
+  }, finishDelay);
 }
 
 function delay(ms) {
