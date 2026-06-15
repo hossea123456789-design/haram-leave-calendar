@@ -6,7 +6,7 @@ const WRITE_TOKEN_STORAGE_KEY = 'wifeLeaveCalendar.writeToken.v2';
 // 기본 Apps Script /exec URL입니다.
 // 보기 전용 기기에서는 관리자 설정 없이 이 주소로 Google Sheets 최신 데이터를 불러옵니다.
 const CONFIG = {
-  SHEETS_API_URL: 'https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHIRGu1__5yth-oxl4rhc/exec',
+  SHEETS_API_URL: 'https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec',
   AUTO_LOAD_FROM_SHEETS: true,
 };
 
