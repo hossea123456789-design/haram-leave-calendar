@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <title>하람 퇴근 캘린더</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">FAMILY LEAVE CALENDAR</p>
+        <h1>하람 퇴근 캘린더</h1>
+        <p class="subtitle">근태 JSON을 Google Sheets에 저장하고, 가족 공유 화면에서 최신 퇴근 시간을 확인합니다.</p>
+      </div>
+      <div class="header-actions">
+        <button id="refreshBtn" type="button" class="ghost-btn">시트 새로고침</button>
+        <button id="toggleAdminBtn" type="button" class="primary-btn">관리자</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="adminPanel" class="admin-panel hidden" aria-label="관리자 설정 및 근태 JSON 저장">
+        <div class="panel-title-row">
+          <div>
+            <p class="eyebrow">ADMIN</p>
+            <h2>Google Sheets 저장 설정</h2>
+          </div>
+          <button id="closeAdminBtn" type="button" class="icon-btn" aria-label="관리자 닫기">×</button>
+        </div>
+
+        <div class="settings-grid">
+          <label class="field">
+            <span>Apps Script Web App URL</span>
+            <input id="scriptUrlInput" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/.../exec" />
+          </label>
+          <label class="field">
+            <span>WRITE_TOKEN</span>
+            <input id="writeTokenInput" type="password" autocomplete="off" placeholder="Code.gs에 입력한 토큰" />
+          </label>
+        </div>
+
+        <div class="admin-actions">
+          <button id="saveSettingsBtn" type="button" class="secondary-btn">연동 설정 저장</button>
+          <button id="loadSheetsBtn" type="button" class="ghost-light-btn">시트에서 불러오기</button>
+          <button id="clearLocalBtn" type="button" class="danger-btn">브라우저 저장 삭제</button>
+        </div>
+        <p id="syncStatus" class="sync-status" aria-live="polite">연동 상태 확인 중</p>
+
+        <hr class="divider" />
+
+        <div class="panel-title-row compact">
+          <div>
+            <p class="eyebrow">IMPORT</p>
+            <h2>크롬 확장 JSON 붙여넣기</h2>
+          </div>
+        </div>
+
+        <textarea id="jsonInput" spellcheck="false" placeholder='크롬 확장에서 복사한 JSON을 여기에 붙여넣으세요.
+
+예: { "source": "work_attendance_calendar", "year": 2026, "month": 6, "items": [...] }'></textarea>
+
+        <div class="admin-actions">
+          <button id="previewJsonBtn" type="button" class="secondary-btn">화면에만 미리보기</button>
+          <button id="saveJsonBtn" type="button" class="primary-btn">시트에 저장</button>
+          <button id="clearInputBtn" type="button" class="ghost-light-btn">입력창 비우기</button>
+        </div>
+        <div id="importResult" class="import-result" aria-live="polite"></div>
+      </section>
+
+      <section id="emptyState" class="empty-state hidden">
+        <h2>아직 표시할 근태 데이터가 없습니다.</h2>
+        <p>관리자 화면에서 Apps Script URL을 설정한 뒤 Google Sheets에서 불러오거나, 근태 JSON을 붙여넣어 저장해 주세요.</p>
+      </section>
+
+      <section id="dashboard" class="dashboard hidden" aria-label="퇴근 캘린더 대시보드">
+        <section class="today-card">
+          <div>
+            <p class="eyebrow">TODAY</p>
+            <h2 id="todayLeave">-</h2>
+            <p id="todayDetail" class="today-detail">-</p>
+          </div>
+          <div id="todayBadge" class="status-badge unknown">-</div>
+        </section>
+
+        <section class="summary-grid" aria-label="요약 정보">
+          <article class="summary-card">
+            <span>기준 월</span>
+            <strong id="monthSummaryText">-</strong>
+          </article>
+          <article class="summary-card">
+            <span>퇴근 표시</span>
+            <strong id="leaveCountText">-</strong>
+          </article>
+          <article class="summary-card">
+            <span>근무 정보 없음</span>
+            <strong id="missingCountText">-</strong>
+          </article>
+          <article class="summary-card">
+            <span>최근 업데이트</span>
+            <strong id="updatedAtText">-</strong>
+          </article>
+        </section>
+
+        <section id="diagnostics" class="diagnostics hidden"></section>
+
+        <section class="calendar-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">MONTHLY</p>
+              <h2 id="monthTitle">-</h2>
+            </div>
+            <div class="legend" aria-label="범례">
+              <span><i class="dot dot-normal"></i>보통</span>
+              <span><i class="dot dot-late"></i>늦음</span>
+              <span><i class="dot dot-midnight"></i>익일</span>
+              <span><i class="dot dot-off"></i>휴무</span>
+              <span><i class="dot dot-unknown"></i>정보 없음</span>
+            </div>
+          </div>
+          <div class="weekday-row" aria-hidden="true">
+            <span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span>
+          </div>
+          <div id="calendarGrid" class="calendar-grid"></div>
+        </section>
+
+        <section class="week-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">THIS WEEK</p>
+              <h2>이번 주 퇴근 요약</h2>
+            </div>
+          </div>
+          <div id="weekList" class="week-list"></div>
+        </section>
+
+        <section class="raw-section">
+          <details>
+            <summary>현재 반영된 원본 JSON 보기</summary>
+            <pre id="rawJson"></pre>
+          </details>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
