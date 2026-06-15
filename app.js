@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'wifeLeaveCalendar.attendanceJson.v3';
+const STORAGE_KEY = 'wifeLeaveCalendar.attendanceJson.v4';
 const API_URL_STORAGE_KEY = 'wifeLeaveCalendar.googleScriptUrl.v2';
 const WRITE_TOKEN_STORAGE_KEY = 'wifeLeaveCalendar.writeToken.v2';
 
@@ -98,17 +98,21 @@ function bindEvents() {
 }
 
 function hydrateSettings() {
-  els.scriptUrlInput.value = localStorage.getItem(API_URL_STORAGE_KEY) || CONFIG.SHEETS_API_URL || '';
+  els.scriptUrlInput.value = normalizeApiUrl(localStorage.getItem(API_URL_STORAGE_KEY) || CONFIG.SHEETS_API_URL || '');
   els.writeTokenInput.value = localStorage.getItem(WRITE_TOKEN_STORAGE_KEY) || '';
   updateSyncStatus(getApiUrl() ? 'Apps Script URL이 설정되어 있습니다.' : 'Apps Script URL을 입력하면 Google Sheets와 연동됩니다.');
 }
 
 function saveSettings() {
-  const url = els.scriptUrlInput.value.trim();
+  const url = normalizeApiUrl(els.scriptUrlInput.value.trim());
   const token = els.writeTokenInput.value.trim();
 
-  if (url) localStorage.setItem(API_URL_STORAGE_KEY, url);
-  else localStorage.removeItem(API_URL_STORAGE_KEY);
+  if (url) {
+    localStorage.setItem(API_URL_STORAGE_KEY, url);
+    els.scriptUrlInput.value = url;
+  } else {
+    localStorage.removeItem(API_URL_STORAGE_KEY);
+  }
 
   if (token) localStorage.setItem(WRITE_TOKEN_STORAGE_KEY, token);
   else localStorage.removeItem(WRITE_TOKEN_STORAGE_KEY);
@@ -118,7 +122,18 @@ function saveSettings() {
 }
 
 function getApiUrl() {
-  return (els.scriptUrlInput?.value || localStorage.getItem(API_URL_STORAGE_KEY) || CONFIG.SHEETS_API_URL || '').trim();
+  const raw = (els.scriptUrlInput?.value || localStorage.getItem(API_URL_STORAGE_KEY) || CONFIG.SHEETS_API_URL || '').trim();
+  return normalizeApiUrl(raw);
+}
+
+function normalizeApiUrl(raw) {
+  const url = String(raw || '').trim();
+  if (!url) return '';
+  if (/\/exec(?:[?#].*)?$/.test(url)) return url;
+  if (/\/dev(?:[?#].*)?$/.test(url)) return url.replace(/\/dev([?#].*)?$/, '/exec');
+  const match = url.match(/^(https:\/\/script\.google\.com\/macros\/s\/[^/?#]+)(?:[/?#].*)?$/);
+  if (match) return `${match[1]}/exec`;
+  return url;
 }
 
 function getWriteToken() {
@@ -527,6 +542,7 @@ function buildDetailText(item) {
   if (item.start) parts.push(`출근 ${item.start}`);
   if (item.target) parts.push(`목표 ${item.target}`);
   if (item.nonWork) parts.push(`비업무 ${item.nonWork}`);
+  if (item.leaveCorrection) parts.push('퇴근 보정');
   if (!parts.length) return '근무 정보 없음';
   return parts.join(' · ');
 }
@@ -594,9 +610,31 @@ async function saveToSheets(data) {
   updateSyncStatus('Google Sheets에 저장하는 중입니다...');
   try {
     const payload = encodeBase64Url(JSON.stringify(data));
-    const response = await jsonpRequest(apiUrl, { action: 'save', token, payload });
-    if (!response || response.ok === false) throw new Error(response?.error || '저장 응답이 올바르지 않습니다.');
+
+    // JSONP GET 저장은 전체 JSON이 URL에 실려 길이 제한으로 실패할 수 있습니다.
+    // 저장은 숨김 form POST로 보내고, 짧은 JSONP load로 저장 여부를 확인합니다.
+    await postFormToSheets(apiUrl, { action: 'save', token, payload });
+    await delay(900);
+
+    const loaded = await jsonpRequest(apiUrl, { action: 'load' });
+    if (!loaded || loaded.ok === false) throw new Error(loaded?.error || '저장 후 확인 응답이 올바르지 않습니다.');
+    if (!loaded.data) throw new Error('저장 후 Google Sheets에서 데이터를 다시 읽지 못했습니다.');
+
+    const savedExportedAt = String(loaded.data.exportedAt || '');
+    const currentExportedAt = String(data.exportedAt || '');
+    const savedMonth = `${loaded.data.year}-${loaded.data.month}`;
+    const currentMonth = `${data.year}-${data.month}`;
+
+    if (currentExportedAt && savedExportedAt !== currentExportedAt) {
+      throw new Error(`저장 확인 실패: 시트 최신 데이터가 방금 저장한 JSON이 아닙니다. 최신 exportedAt=${savedExportedAt || '없음'}`);
+    }
+    if (savedMonth !== currentMonth) {
+      throw new Error(`저장 확인 실패: 시트 최신 월(${savedMonth})이 현재 JSON(${currentMonth})과 다릅니다.`);
+    }
+
     state.lastSyncAt = new Date();
+    const normalized = normalizeAttendance(loaded.data);
+    applyData(normalized, { save: true, source: 'Google Sheets 저장 확인' });
     updateSyncStatus(`Google Sheets 저장 완료 · ${formatDateTime(state.lastSyncAt.toISOString())}`);
     return true;
   } catch (error) {
@@ -604,6 +642,56 @@ async function saveToSheets(data) {
     showToast('시트 저장 실패');
     return false;
   }
+}
+
+function postFormToSheets(apiUrl, fields) {
+  return new Promise((resolve, reject) => {
+    const frameName = `wifeLeaveCalendarPost_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+    const iframe = document.createElement('iframe');
+    const form = document.createElement('form');
+    let submitted = false;
+
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error('저장 요청 시간이 초과되었습니다. Apps Script 배포/권한을 확인해 주세요.'));
+    }, 30000);
+
+    function cleanup() {
+      window.clearTimeout(timeout);
+      form.remove();
+      iframe.remove();
+    }
+
+    iframe.name = frameName;
+    iframe.style.display = 'none';
+    iframe.onload = () => {
+      if (!submitted) return;
+      cleanup();
+      resolve(true);
+    };
+
+    form.method = 'POST';
+    form.action = apiUrl;
+    form.target = frameName;
+    form.style.display = 'none';
+
+    Object.entries(fields).forEach(([key, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = String(value);
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(iframe);
+    document.body.appendChild(form);
+    submitted = true;
+    form.submit();
+  });
+}
+
+function delay(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function jsonpRequest(baseUrl, params = {}) {
