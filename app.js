@@ -1,11 +1,11 @@
-const STORAGE_KEY = 'wifeLeaveCalendar.attendanceJson.v2';
+const STORAGE_KEY = 'wifeLeaveCalendar.attendanceJson.v3';
 const API_URL_STORAGE_KEY = 'wifeLeaveCalendar.googleScriptUrl.v2';
 const WRITE_TOKEN_STORAGE_KEY = 'wifeLeaveCalendar.writeToken.v2';
 
 // GitHub Pages에 올리기 전 Apps Script /exec URL을 여기에 넣으면
 // 와이프 휴대폰에서도 별도 설정 없이 자동으로 Google Sheets 최신 데이터를 불러옵니다.
 const CONFIG = {
-  SHEETS_API_URL: 'https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec',
+  SHEETS_API_URL: '',
   AUTO_LOAD_FROM_SHEETS: true,
 };
 
@@ -241,7 +241,14 @@ function normalizeItem(item, year, month) {
   const target = normalizeTime(item.target);
   const start = normalizeTime(item.start);
   const nonWork = normalizeTime(item.nonWork);
-  const leave = normalizeTime(item.leave);
+  const leaveRaw = normalizeTime(item.leave);
+  const leaveKindRaw = cleanNullable(item.leaveKind) || 'unknown';
+  const leaveSourceRaw = cleanNullable(item.leaveSource) || 'unknown';
+  let leave = leaveRaw;
+  let leaveKind = leaveKindRaw;
+  let leaveSource = leaveSourceRaw;
+  let leaveCorrection = null;
+  const computedPlannedLeave = computePlannedLeave({ start, target, nonWork });
   let type = String(item.type || '').trim().toLowerCase();
 
   if (!['work', 'vacation', 'holiday', 'weekend', 'empty'].includes(type)) {
@@ -255,7 +262,28 @@ function normalizeItem(item, year, month) {
   const [y, m] = date.split('-').map(Number);
   if (year && month && (y !== year || m !== month)) return null;
 
-  return { date, weekday, type, target, start, nonWork, leave, label };
+  if (type === 'work' && leaveKind === 'planned' && computedPlannedLeave && leave !== computedPlannedLeave && leaveSource !== 'dom') {
+    leaveCorrection = {
+      reason: 'planned_leave_recomputed_from_start_target_nonwork_break',
+      originalLeave: leave,
+      computedLeave: computedPlannedLeave,
+      rule: 'start + target + nonWork + 60min',
+    };
+    leave = computedPlannedLeave;
+    leaveSource = 'computed';
+  }
+
+  if (isNonWorkType(type)) {
+    // 휴가/공휴일/주말은 근무 상세가 섞여 들어오더라도 퇴근 표시에는 쓰지 않습니다.
+    leave = null;
+    if (type !== 'vacation') {
+      // 공휴일/주말의 00:00 target/nonWork는 근무 정보가 아니라 기본값인 경우가 많습니다.
+      return { date, weekday, type, target: null, start: null, nonWork: null, leave, leaveKind: 'none', leaveSource: 'none', label, leaveCorrection };
+    }
+    return { date, weekday, type, target, start: null, nonWork: null, leave, leaveKind: 'none', leaveSource: 'none', label, leaveCorrection };
+  }
+
+  return { date, weekday, type, target, start, nonWork, leave, leaveKind, leaveSource, label, leaveCorrection };
 }
 
 function normalizeTime(value) {
@@ -268,6 +296,36 @@ function normalizeTime(value) {
   const m = Number(match[2]);
   if (h < 0 || h > 29 || m < 0 || m > 59) return null;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function timeToMinutes(value) {
+  const time = normalizeTime(value);
+  if (!time) return null;
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function minutesToClock(totalMinutes) {
+  if (!Number.isFinite(totalMinutes)) return null;
+  const dayMinutes = 24 * 60;
+  const normalized = ((Math.round(totalMinutes) % dayMinutes) + dayMinutes) % dayMinutes;
+  const h = Math.floor(normalized / 60);
+  const m = normalized % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function computePlannedLeave(item) {
+  const startMinutes = timeToMinutes(item.start);
+  const targetMinutes = timeToMinutes(item.target);
+  const nonWorkMinutes = timeToMinutes(item.nonWork) || 0;
+  if (startMinutes === null || targetMinutes === null) return null;
+  if (targetMinutes <= 0) return null;
+  // 근태 페이지의 계획 퇴근 표시는 출근 + 목표근무 + 비업무 + 기본 휴게 1시간 기준으로 맞습니다.
+  return minutesToClock(startMinutes + targetMinutes + nonWorkMinutes + 60);
+}
+
+function isNonWorkType(type) {
+  return ['vacation', 'holiday', 'weekend'].includes(type);
 }
 
 function cleanNullable(value) {
@@ -307,11 +365,12 @@ function getStats(data) {
   const offCount = data.items.filter(isOffDay).length;
   const missingWorkInfo = data.items.filter((item) => isPotentialWorkday(item) && !item.leave);
   const allBusinessDaysMissing = data.items.filter((item) => isBusinessWeekday(item) && !isOffDay(item)).every((item) => !item.leave && !item.start && !item.target);
-  return { leaveCount, offCount, missingWorkInfo, allBusinessDaysMissing };
+  const correctedPlannedLeave = data.items.filter((item) => item.leaveCorrection);
+  return { leaveCount, offCount, missingWorkInfo, allBusinessDaysMissing, correctedPlannedLeave };
 }
 
 function isOffDay(item) {
-  return ['weekend', 'holiday', 'vacation'].includes(item.type);
+  return isNonWorkType(item.type);
 }
 
 function isBusinessWeekday(item) {
@@ -344,7 +403,8 @@ function renderCalendar(data) {
   const itemByDate = new Map(data.items.map((item) => [item.date, item]));
   const first = new Date(data.year, data.month - 1, 1);
   const lastDate = new Date(data.year, data.month, 0).getDate();
-  const startOffset = (first.getDay() + 6) % 7;
+  // 일요일 시작 달력: getDay()는 일=0, 월=1, ... 토=6 이므로 그대로 사용합니다.
+  const startOffset = first.getDay();
   const todayKey = toDateKey(new Date());
 
   for (let i = 0; i < startOffset; i += 1) {
@@ -383,12 +443,12 @@ function renderCalendar(data) {
 function renderWeek(data) {
   els.weekList.innerHTML = '';
   const today = new Date();
-  const monday = getWeekMonday(today);
+  const weekStart = getWeekSunday(today);
   const itemByDate = new Map(data.items.map((item) => [item.date, item]));
 
   for (let i = 0; i < 7; i += 1) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
     const date = toDateKey(d);
     const fallback = { date, weekday: getKoreanWeekday(date), type: 'empty', target: null, start: null, nonWork: null, leave: null, label: null };
     const item = itemByDate.get(date) || fallback;
@@ -416,6 +476,13 @@ function renderDiagnostics(data, stats) {
   if (stats.missingWorkInfo.length > 0) {
     const sample = stats.missingWorkInfo.slice(0, 8).map((item) => item.date).join(', ');
     messages.push(`퇴근 시간이 비어 있는 평일이 ${stats.missingWorkInfo.length}일 있습니다. 예: ${sample}${stats.missingWorkInfo.length > 8 ? ' ...' : ''}`);
+  }
+  if (stats.correctedPlannedLeave.length > 0) {
+    const sample = stats.correctedPlannedLeave
+      .slice(0, 8)
+      .map((item) => `${item.date} ${item.leaveCorrection.originalLeave || '없음'}→${item.leaveCorrection.computedLeave}`)
+      .join(', ');
+    messages.push(`확장 JSON의 planned leave가 시작+목표+비업무+휴게 1시간 기준과 맞지 않아 ${stats.correctedPlannedLeave.length}건을 화면에서 보정했습니다. 예: ${sample}${stats.correctedPlannedLeave.length > 8 ? ' ...' : ''}`);
   }
   if (data.items.length < new Date(data.year, data.month, 0).getDate()) {
     messages.push('해당 월의 일부 날짜가 items에 없습니다. 없는 날짜는 화면에서 “정보 없음”으로 표시됩니다.');
@@ -595,11 +662,9 @@ function getKoreanWeekday(dateKey) {
   return ['일', '월', '화', '수', '목', '금', '토'][new Date(y, m - 1, d).getDay()];
 }
 
-function getWeekMonday(date) {
+function getWeekSunday(date) {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const day = d.getDay();
-  const diff = (day + 6) % 7;
-  d.setDate(d.getDate() - diff);
+  d.setDate(d.getDate() - d.getDay());
   return d;
 }
 

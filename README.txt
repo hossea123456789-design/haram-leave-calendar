@@ -1,33 +1,17 @@
-하람 퇴근 캘린더 - Google Sheets DB 연동판 v0.2
+하람 퇴근 캘린더 v0.3
 
-[GitHub Pages에 올릴 파일]
+변경사항
+- 월간 달력을 일/월/화/수/목/금/토 순서로 수정했습니다.
+- 2026년 6월처럼 1일이 월요일인 달은 일요일 칸을 비우고 월요일 칸부터 1일을 배치합니다.
+- 이번 주 요약도 일요일 시작 기준으로 맞췄습니다.
+- 크롬 확장 JSON에서 leaveKind가 planned인데 leave가 17:30 기본값으로 잘못 들어오는 경우, start + target + nonWork + 기본 휴게 1시간 기준으로 화면 표시용 퇴근 예정 시간을 보정합니다.
+- 휴가/공휴일/주말은 leave를 null로 정리하고, 공휴일/주말에 섞여 들어오는 target/nonWork 00:00 기본값은 표시하지 않습니다.
+- 보정 발생 시 진단 영역에 원래값→보정값을 표시합니다.
+
+GitHub에 올릴 파일
 - index.html
 - styles.css
 - app.js
 - manifest.webmanifest
 
-[GitHub에 올리지 말 것]
-- google-apps-script/Code.gs 안에 실제 WRITE_TOKEN을 넣은 파일
-
-[Google Sheets 설정]
-1. 새 Google Sheets 생성
-2. 확장 프로그램 > Apps Script
-3. google-apps-script/Code.gs 내용을 붙여넣기
-4. WRITE_TOKEN을 임의 문자열로 변경
-5. 배포 > 새 배포 > 웹 앱
-6. 실행 권한: 나
-7. 액세스 권한: 모든 사용자
-8. /exec로 끝나는 URL 복사
-
-[프론트 설정]
-방법 A: GitHub 배포 전 app.js 상단 CONFIG.SHEETS_API_URL에 /exec URL 입력
-방법 B: 웹앱 접속 후 관리자 > Apps Script URL 입력 > 연동 설정 저장
-
-와이프 휴대폰에서 별도 설정 없이 보이게 하려면 방법 A가 더 좋습니다.
-관리자 저장 작업에는 WRITE_TOKEN이 필요합니다.
-
-[사용 흐름]
-1. 크롬 확장에서 근태 JSON 복사
-2. 웹앱 관리자 화면에 붙여넣기
-3. '시트에 저장' 클릭
-4. 와이프는 GitHub Pages 주소에서 최신 캘린더 확인
+Google Apps Script Code.gs는 기존 것을 그대로 사용해도 됩니다.
