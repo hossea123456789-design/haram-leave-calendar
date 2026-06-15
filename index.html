@@ -4,160 +4,100 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <title>하람 퇴근 캘린더</title>
-  <link rel="manifest" href="manifest.webmanifest?v=012" />
-  <link rel="stylesheet" href="styles.css?v=012" />
+  <title>하람 퇴근 캘린더 · Google Sheets v013</title>
+  <style>
+    :root{
+      --bg:#eef2f7;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;
+      --navy:#111827;--navy2:#1f2937;--green:#047857;--orange:#c2410c;--red:#b91c1c;--blue:#4338ca;--gray:#4b5563;
+      --shadow:0 16px 46px rgba(15,23,42,.11);--radius:26px;
+    }
+    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",Arial,sans-serif;background:linear-gradient(180deg,#f7f9fc 0,#eef2f7 100%);color:var(--ink)}
+    .app{width:min(1280px,100%);margin:0 auto;padding:24px 22px 64px}.hero{background:linear-gradient(135deg,#111827,#243247);color:#fff;border-radius:28px;padding:30px 34px;box-shadow:var(--shadow);position:relative;overflow:hidden}.hero::after{content:"";position:absolute;inset:auto -80px -110px auto;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.08)}
+    .hero-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.eyebrow{font-size:13px;font-weight:900;letter-spacing:.12em;color:#d1d5db}.hero h1{margin:8px 0 12px;font-size:clamp(42px,7vw,72px);line-height:1;font-weight:1000;letter-spacing:-.05em}.hero p{font-size:20px;line-height:1.5;color:#e5e7eb;margin:0}.hero-actions{display:flex;gap:12px;align-items:center;z-index:1}.btn{border:0;border-radius:999px;padding:13px 20px;font-weight:900;font-size:16px;cursor:pointer;white-space:nowrap}.btn.primary{background:#fff;color:#111827}.btn.ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25)}.btn.dark{background:#111827;color:#fff}.btn.soft{background:#eef2ff;color:#3730a3}.btn.danger{background:#fee2e2;color:#b91c1c}.btn:disabled{opacity:.55;cursor:not-allowed}
+    .toast{position:fixed;z-index:99;top:18px;right:18px;width:min(560px,calc(100vw - 36px));background:rgba(15,23,42,.96);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:16px 18px;box-shadow:0 20px 70px rgba(0,0,0,.28);display:none}.toast.show{display:block}.toast.error{background:linear-gradient(135deg,#7f1d1d,#991b1b)}.toast.success{background:linear-gradient(135deg,#064e3b,#047857)}.toast-row{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:17px;font-weight:900}.progress{height:9px;border-radius:999px;background:rgba(255,255,255,.22);margin-top:12px;overflow:hidden}.progress>i{display:block;height:100%;width:0;background:#fff;border-radius:inherit;transition:width .18s ease}
+    .admin{display:none;margin-top:18px;background:#fff;border-radius:26px;padding:24px;box-shadow:var(--shadow)}.admin.show{display:block}.admin h2{margin:0 0 16px;font-size:28px;letter-spacing:-.04em}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field label{display:block;font-size:13px;text-transform:uppercase;letter-spacing:.06em;font-weight:900;color:#6b7280;margin-bottom:8px}.field input,.field textarea{width:100%;border:1px solid var(--line);border-radius:16px;padding:13px 15px;font-size:15px;background:#fff;color:#111827}.field textarea{min-height:230px;background:#0f172a;color:#f8fafc;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical;line-height:1.5}.admin-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}.note{font-size:14px;color:#6b7280;line-height:1.5;margin-top:10px}.status-line{margin-top:12px;font-weight:800}.status-line.ok{color:#047857}.status-line.err{color:#b91c1c}
+    .summary{display:grid;grid-template-columns:2fr repeat(4,1fr);gap:14px;margin:18px 0}.tile{background:#fff;border-radius:20px;padding:20px;box-shadow:0 10px 30px rgba(15,23,42,.06)}.tile.today{grid-column:span 2;min-height:150px}.tile small{display:block;color:#6b7280;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.tile strong{display:block;font-size:clamp(26px,5vw,54px);line-height:1.08;margin:8px 0 6px}.tile p{margin:0;color:#6b7280;font-size:15px;line-height:1.45}.badge{display:inline-flex;border-radius:999px;padding:9px 14px;font-weight:900;background:#f3f4f6;color:#374151}.badge.green{background:#d1fae5;color:#065f46}.badge.orange{background:#ffedd5;color:#9a3412}.badge.red{background:#fee2e2;color:#991b1b}.badge.blue{background:#e0e7ff;color:#3730a3}
+    .panel{background:#fff;border-radius:26px;padding:24px;box-shadow:var(--shadow);margin-top:18px}.panel-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}.panel h2{margin:0;font-size:28px;letter-spacing:-.04em}.legend{display:flex;gap:14px;flex-wrap:wrap;color:#4b5563;font-weight:800}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}.dow{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin:0 0 10px;color:#6b7280;font-weight:900;text-align:center}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}.day{min-height:150px;border:1px solid var(--line);border-radius:16px;padding:13px;background:#fff}.day.blank{border:0;background:transparent}.day.today{outline:2px solid #111827}.date-row{display:flex;justify-content:space-between;align-items:center;font-weight:900}.date-num{font-size:22px}.weekday{font-size:13px;color:#6b7280}.main-time{font-size:29px;font-weight:1000;letter-spacing:-.03em;margin:22px 0 10px}.main-time.green{color:var(--green)}.main-time.orange{color:var(--orange)}.main-time.red{color:var(--red)}.main-time.blue{color:var(--blue)}.main-time.gray{color:var(--gray)}.detail{font-size:13px;color:#6b7280;line-height:1.45}.corrected{font-size:11px;color:#b45309;margin-top:4px}.week-list{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}.week-card{border:1px solid var(--line);border-radius:16px;padding:14px}.empty{background:#fff;border-radius:26px;padding:64px 18px;text-align:center;box-shadow:var(--shadow);margin-top:18px}.empty h2{font-size:34px;letter-spacing:-.04em;margin:0 0 12px}.empty p{font-size:17px;color:#6b7280;line-height:1.6;margin:0}.diag{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:18px;padding:16px;margin:16px 0;line-height:1.6}.diag strong{display:block;margin-bottom:6px}
+    @media(max-width:900px){.app{padding:18px 14px 48px}.hero{padding:28px 24px}.hero-top{display:block}.hero-actions{margin-top:22px}.hero-actions .btn{flex:1}.summary{grid-template-columns:1fr 1fr}.tile.today{grid-column:1/-1}.calendar,.dow{grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}.day{min-height:120px;padding:10px}.main-time{font-size:23px}.detail{font-size:12px}.grid2{grid-template-columns:1fr}.week-list{grid-template-columns:1fr}.panel{padding:18px}.panel-head{display:block}.legend{margin-top:12px}.toast{top:12px;left:12px;right:12px;width:auto}.hero h1{font-size:48px}.hero p{font-size:18px}}
+    @media(max-width:620px){.calendar{display:block}.dow{display:none}.day{margin-bottom:10px;min-height:132px}.day.blank{display:none}.summary{grid-template-columns:1fr}.hero-actions{display:grid;grid-template-columns:1fr 1fr}.btn{font-size:15px;padding:13px 16px}}
+  </style>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">FAMILY LEAVE CALENDAR</p>
-        <h1>하람 퇴근 캘린더</h1>
-        <p class="subtitle">근태 JSON을 Google Sheets에 저장하고, 가족 공유 화면에서 최신 퇴근 시간을 확인합니다.</p>
-        <div id="heroSyncToast" class="hero-sync-toast hidden" aria-live="polite">
-          <div class="hero-sync-line">
-            <span id="heroSyncText">구글 스프레드시트 DB 불러오는 중 . . . 0%</span>
-            <strong id="heroSyncPercent">0%</strong>
-          </div>
-          <div class="hero-sync-track"><i id="heroSyncBar"></i></div>
-        </div>
-      </div>
-      <div class="header-actions">
-        <button id="refreshBtn" type="button" class="ghost-btn">시트 새로고침</button>
-        <button id="toggleAdminBtn" type="button" class="primary-btn">관리자</button>
-      </div>
-    </header>
+  <div class="toast" id="toast"><div class="toast-row"><span id="toastText">구글 스프레드시트 DB 불러오는 중 . . .</span><span id="toastPct">0%</span></div><div class="progress"><i id="toastBar"></i></div></div>
+  <main class="app">
+    <section class="hero">
+      <div class="hero-top"><div><div class="eyebrow">FAMILY LEAVE CALENDAR · GITHUB SHEETS v013</div><h1>하람 퇴근 캘린더</h1><p>GitHub Pages 화면에서 Google Sheets DB를 불러와 최신 퇴근 시간을 확인합니다.</p></div><div class="hero-actions"><button class="btn ghost" id="reloadBtn">시트 새로고침</button><button class="btn primary" id="adminBtn">관리자</button></div></div>
+    </section>
+    <section class="admin" id="adminPanel">
+      <h2>Google Sheets 저장 설정</h2>
+      <div class="grid2"><div class="field"><label>Apps Script Web App URL</label><input id="apiUrlInput" readonly /></div><div class="field"><label>WRITE_TOKEN</label><input id="tokenInput" type="password" placeholder="저장할 때만 입력" /></div></div>
+      <p class="note">보기 전용 기기는 관리자 정보가 필요 없습니다. 이 화면은 JSON을 시트에 저장할 때만 사용합니다.</p>
+      <div class="admin-actions"><button class="btn soft" id="saveSettingsBtn">토큰 저장</button><button class="btn" id="loadBtn">시트에서 불러오기</button><button class="btn danger" id="clearAdminBtn">브라우저 저장 삭제</button></div>
+      <div class="status-line" id="adminStatus"></div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:22px 0" />
+      <div class="field"><label>크롬 확장 JSON 붙여넣기</label><textarea id="jsonInput" placeholder='크롬 확장에서 복사한 JSON을 여기에 붙여넣으세요. 새로 붙여넣으면 기존 입력 내용은 자동으로 교체됩니다.'></textarea></div>
+      <div class="admin-actions"><button class="btn soft" id="previewBtn">화면에만 미리보기</button><button class="btn dark" id="saveBtn">시트에 저장</button><button class="btn" id="clearInputBtn">입력창 비우기</button></div>
+    </section>
+    <div id="diagnostics"></div>
+    <section id="content"><div class="empty"><h2>구글 스프레드시트 DB 불러오는 중</h2><p>기존 캐시가 있으면 먼저 표시하고, 최신 데이터가 도착하면 자동 갱신합니다.</p></div></section>
+  </main>
+  <script>
+  (()=>{
+    'use strict';
+    const VERSION='v013';
+    const API_URL='https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec';
+    const CACHE_KEY='haram-leave-calendar-cache-v013';
+    const TOKEN_KEY='haram-leave-calendar-write-token';
+    const DOW=['일','월','화','수','목','금','토'];
+    const DOW_MON=['월','화','수','목','금','토','일'];
+    const $=(id)=>document.getElementById(id);
+    const state={data:null, source:'none', loading:false};
 
-    <main>
-      <section id="adminPanel" class="admin-panel hidden" aria-label="관리자 설정 및 근태 JSON 저장">
-        <div class="panel-title-row">
-          <div>
-            <p class="eyebrow">ADMIN</p>
-            <h2>Google Sheets 저장 설정</h2>
-          </div>
-          <button id="closeAdminBtn" type="button" class="icon-btn" aria-label="관리자 닫기">×</button>
-        </div>
-
-        <div class="settings-grid">
-          <label class="field">
-            <span>Apps Script Web App URL</span>
-            <input id="scriptUrlInput" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/.../exec" />
-          </label>
-          <label class="field">
-            <span>WRITE_TOKEN</span>
-            <input id="writeTokenInput" type="password" autocomplete="off" placeholder="Code.gs에 입력한 토큰" />
-          </label>
-        </div>
-
-        <div class="admin-actions">
-          <button id="saveSettingsBtn" type="button" class="secondary-btn">연동 설정 저장</button>
-          <button id="loadSheetsBtn" type="button" class="ghost-light-btn">시트에서 불러오기</button>
-          <button id="clearLocalBtn" type="button" class="danger-btn">브라우저 저장 삭제</button>
-        </div>
-        <p id="syncStatus" class="sync-status" aria-live="polite">연동 상태 확인 중</p>
-
-        <hr class="divider" />
-
-        <div class="panel-title-row compact">
-          <div>
-            <p class="eyebrow">IMPORT</p>
-            <h2>크롬 확장 JSON 붙여넣기</h2>
-          </div>
-        </div>
-
-        <textarea id="jsonInput" spellcheck="false" placeholder='크롬 확장에서 복사한 JSON을 여기에 붙여넣으세요.
-
-예: { "source": "work_attendance_calendar", "year": 2026, "month": 6, "items": [...] }'></textarea>
-
-        <div class="admin-actions">
-          <button id="previewJsonBtn" type="button" class="secondary-btn">화면에만 미리보기</button>
-          <button id="saveJsonBtn" type="button" class="primary-btn">시트에 저장</button>
-          <button id="clearInputBtn" type="button" class="ghost-light-btn">입력창 비우기</button>
-        </div>
-        <div id="importResult" class="import-result" aria-live="polite"></div>
-      </section>
-
-      <section id="emptyState" class="empty-state hidden">
-        <h2>아직 표시할 근태 데이터가 없습니다.</h2>
-        <p>관리자 화면에서 Apps Script URL을 설정한 뒤 Google Sheets에서 불러오거나, 근태 JSON을 붙여넣어 저장해 주세요.</p>
-      </section>
-
-      <section id="dashboard" class="dashboard hidden" aria-label="퇴근 캘린더 대시보드">
-        <section class="today-card">
-          <div>
-            <p class="eyebrow">TODAY</p>
-            <h2 id="todayLeave">-</h2>
-            <p id="todayDetail" class="today-detail">-</p>
-          </div>
-          <div id="todayBadge" class="status-badge unknown">-</div>
-        </section>
-
-        <section class="summary-grid" aria-label="요약 정보">
-          <article class="summary-card">
-            <span>기준 월</span>
-            <strong id="monthSummaryText">-</strong>
-          </article>
-          <article class="summary-card">
-            <span>퇴근 표시</span>
-            <strong id="leaveCountText">-</strong>
-          </article>
-          <article class="summary-card">
-            <span>근무 정보 없음</span>
-            <strong id="missingCountText">-</strong>
-          </article>
-          <article class="summary-card">
-            <span>최근 업데이트</span>
-            <strong id="updatedAtText">-</strong>
-          </article>
-        </section>
-
-        <section id="diagnostics" class="diagnostics hidden"></section>
-
-        <section class="calendar-section">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">MONTHLY</p>
-              <h2 id="monthTitle">-</h2>
-            </div>
-            <div class="legend" aria-label="범례">
-              <span><i class="dot dot-normal"></i>보통</span>
-              <span><i class="dot dot-late"></i>늦음</span>
-              <span><i class="dot dot-midnight"></i>익일</span>
-              <span><i class="dot dot-off"></i>휴무</span>
-              <span><i class="dot dot-unknown"></i>정보 없음</span>
-            </div>
-          </div>
-          <div class="weekday-row" aria-hidden="true">
-            <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
-          </div>
-          <div id="calendarGrid" class="calendar-grid"></div>
-        </section>
-
-        <section class="week-section">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">THIS WEEK</p>
-              <h2>이번 주 퇴근 요약</h2>
-            </div>
-          </div>
-          <div id="weekList" class="week-list"></div>
-        </section>
-
-        <section class="raw-section">
-          <details>
-            <summary>현재 반영된 원본 JSON 보기</summary>
-            <pre id="rawJson"></pre>
-          </details>
-        </section>
-      </section>
-    </main>
-  </div>
-
-  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
-  <script src="app.js?v=012"></script>
+    function pad(n){return String(n).padStart(2,'0')}
+    function toDateKey(y,m,d){return y+'-'+pad(m)+'-'+pad(d)}
+    function todayKey(){const d=new Date();return toDateKey(d.getFullYear(),d.getMonth()+1,d.getDate())}
+    function parseMin(t){if(!/^\d{1,2}:\d{2}$/.test(String(t||''))) return null; const [h,m]=String(t).split(':').map(Number); return h*60+m;}
+    function fmtMin(min){min=((min%1440)+1440)%1440; return pad(Math.floor(min/60))+':'+pad(min%60)}
+    function calcPlanned(item){const s=parseMin(item.start), target=parseMin(item.target), non=parseMin(item.nonWork)||0; if(s==null||target==null) return null; return fmtMin(s+target+non+60);}
+    function normalizeItem(item){const x={...item}; if(!x.date) return x; const d=new Date(x.date+'T00:00:00'); if(!x.weekday||!DOW.includes(x.weekday)) x.weekday=DOW[d.getDay()]; const workInfo=!!(x.start||x.leave||x.target) && x.type!=='vacation' && x.type!=='holiday' && x.type!=='weekend';
+      if(workInfo) x.type='work';
+      if(x.type==='work' && x.leaveKind==='planned'){
+        const c=calcPlanned(x);
+        if(c && x.leave && x.leave!==c){x.originalLeave=x.leave; x.leave=c; x.leaveSource=(x.leaveSource||'')+'+computedCorrection'; x.corrected=true;}
+        else if(!x.leave && c){x.leave=c; x.leaveSource='computed'; x.corrected=true;}
+      }
+      if(['vacation','holiday','weekend'].includes(x.type)){ if(x.type!=='vacation'){x.target=null;} x.start=null; x.nonWork=null; x.leave=null; x.leaveKind='none'; x.leaveSource='none'; }
+      return x;
+    }
+    function normalizeData(raw){ if(!raw||!Array.isArray(raw.items)) return null; const data={...raw, items:raw.items.map(normalizeItem)}; data.items.sort((a,b)=>String(a.date).localeCompare(String(b.date))); return data; }
+    function itemMap(data){const m=new Map(); (data?.items||[]).forEach(i=>m.set(i.date,i)); return m;}
+    function classifyLeave(time,type){ if(type==='vacation') return 'blue'; if(type==='holiday'||type==='weekend') return 'blue'; const mins=parseMin(time); if(mins==null) return 'gray'; if(mins<18*60) return 'green'; if(mins<21*60) return 'orange'; return 'red'; }
+    function displayText(item){ if(!item) return '정보 없음'; if(item.type==='vacation') return item.label||'휴가'; if(item.type==='holiday') return item.label||'공휴일'; if(item.type==='weekend') return '주말'; return item.leave || '정보 없음'; }
+    function typeText(item){ if(!item) return '정보 없음'; if(item.type==='work') return item.leave ? '퇴근 표시' : '근무 정보 없음'; return item.label || item.type; }
+    function makeDiagnostics(data){ const div=$('diagnostics'); if(!data){div.innerHTML=''; return;} const corrected=data.items.filter(i=>i.corrected); const missing=data.items.filter(i=>i.type==='work'&&!i.leave); let html=''; if(corrected.length||missing.length){ html='<div class="diag"><strong>데이터 확인</strong>'; if(corrected.length){html+='<div>퇴근 예정 시간이 보정된 날짜: '+corrected.slice(0,12).map(i=>`${i.date} ${i.originalLeave||'없음'}→${i.leave}`).join(', ')+(corrected.length>12?' ...':'')+'</div>'} if(missing.length){html+='<div>퇴근 시간이 없는 근무일: '+missing.slice(0,12).map(i=>i.date).join(', ')+(missing.length>12?' ...':'')+'</div>'} html+='</div>'; } div.innerHTML=html; }
+    function render(data, source='sheet'){ state.data=data; state.source=source; makeDiagnostics(data); const root=$('content'); if(!data){ root.innerHTML='<div class="empty"><h2>아직 표시할 근태 데이터가 없습니다.</h2><p>Google Sheets에 저장된 근태 JSON이 없거나 유효한 최신 행을 찾지 못했습니다.</p></div>'; return; }
+      const map=itemMap(data), today=todayKey(), todayItem=map.get(today); const shown=data.items.filter(i=>i.leave).length; const workMissing=data.items.filter(i=>i.type==='work'&&!i.leave).length; const last=data.exportedAt ? new Date(data.exportedAt).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '-';
+      root.innerHTML=`<section class="summary"><div class="tile today"><small>TODAY</small><strong class="${classifyLeave(todayItem?.leave,todayItem?.type)}">${displayText(todayItem)}</strong><p>${todayItem?detailLine(todayItem):'오늘 근무 정보 없음'}</p></div><div class="tile"><small>기준 월</small><strong>${data.year}년 ${data.month}월</strong></div><div class="tile"><small>퇴근 표시</small><strong>${shown}일</strong></div><div class="tile"><small>누락 근무일</small><strong>${workMissing}일</strong></div><div class="tile"><small>최근 업데이트</small><strong>${last}</strong></div></section>${calendarHtml(data)}${weekHtml(data)}`;
+    }
+    function detailLine(i){ if(!i) return ''; if(i.type==='work') return [`출근 ${i.start||'-'}`,`목표 ${i.target||'-'}`,`비업무 ${i.nonWork||'-'}`].join(' · '); return i.label||typeText(i); }
+    function calendarHtml(data){ const y=Number(data.year), m=Number(data.month); const first=new Date(y,m-1,1).getDay(); const days=new Date(y,m,0).getDate(); const map=itemMap(data); let cells=''; for(let i=0;i<first;i++) cells+='<div class="day blank"></div>'; for(let d=1;d<=days;d++){ const key=toDateKey(y,m,d), it=map.get(key); const wd=DOW[new Date(y,m-1,d).getDay()]; const cls=classifyLeave(it?.leave,it?.type); cells+=`<article class="day ${key===todayKey()?'today':''}"><div class="date-row"><span class="date-num">${d}</span><span class="weekday">${wd}</span></div><div class="main-time ${cls}">${displayText(it)}</div><div class="detail">${detailLine(it)}</div>${it?.corrected?`<div class="corrected">보정: ${it.originalLeave||'-'} → ${it.leave}</div>`:''}</article>`; }
+      return `<section class="panel"><div class="panel-head"><div><small class="eyebrow" style="color:#6b7280">MONTHLY</small><h2>${data.year}년 ${data.month}월</h2></div><div class="legend"><span><i class="dot" style="background:#047857"></i>보통</span><span><i class="dot" style="background:#c2410c"></i>늦음</span><span><i class="dot" style="background:#b91c1c"></i>익일</span><span><i class="dot" style="background:#4338ca"></i>휴무</span><span><i class="dot" style="background:#4b5563"></i>정보 없음</span></div></div><div class="dow">${DOW.map(x=>`<div>${x}</div>`).join('')}</div><div class="calendar">${cells}</div></section>`; }
+    function weekHtml(data){ const map=itemMap(data); const now=new Date(); const start=new Date(now); start.setDate(now.getDate()-now.getDay()); const cards=[]; for(let i=0;i<7;i++){ const d=new Date(start); d.setDate(start.getDate()+i); const key=toDateKey(d.getFullYear(),d.getMonth()+1,d.getDate()); const it=map.get(key); cards.push(`<div class="week-card"><div class="date-row"><b>${DOW[i]}</b><span class="weekday">${d.getMonth()+1}/${d.getDate()}</span></div><div class="main-time ${classifyLeave(it?.leave,it?.type)}" style="font-size:24px;margin:14px 0 6px">${displayText(it)}</div><div class="detail">${typeText(it)}</div></div>`); }
+      return `<section class="panel"><div class="panel-head"><div><small class="eyebrow" style="color:#6b7280">THIS WEEK</small><h2>이번 주 퇴근 요약</h2></div></div><div class="week-list">${cards.join('')}</div></section>`; }
+    function cacheSet(data){ try{localStorage.setItem(CACHE_KEY,JSON.stringify({savedAt:new Date().toISOString(),data}));}catch(e){} }
+    function cacheGet(){ try{const raw=localStorage.getItem(CACHE_KEY); if(!raw) return null; return normalizeData(JSON.parse(raw).data);}catch(e){return null;} }
+    function toast(kind,text,pct=0,hold=0){ const t=$('toast'), bar=$('toastBar'); t.className='toast show '+(kind||''); $('toastText').textContent=text; $('toastPct').textContent=Math.round(pct)+'%'; bar.style.width=Math.max(0,Math.min(100,pct))+'%'; if(hold){clearTimeout(toast._timer); toast._timer=setTimeout(()=>t.classList.remove('show'),hold);} }
+    async function withProgress(label, task){ let p=0; toast('',label+' . . .',0); const timer=setInterval(()=>{p=Math.min(94,p+Math.max(1,Math.round((95-p)*0.12))); toast('',label+' . . .',p);},180); try{const res=await task(); clearInterval(timer); toast('success',label+' 완료',100,1800); return res;}catch(e){clearInterval(timer); toast('error',label+' 실패: '+(e.message||e),100,5200); throw e;} }
+    async function apiGet(params){ const url=new URL(API_URL); Object.entries(params||{}).forEach(([k,v])=>url.searchParams.set(k,v)); url.searchParams.set('_',Date.now()); const res=await fetch(url.toString(),{method:'GET',cache:'no-store',redirect:'follow'}); if(!res.ok) throw new Error('HTTP '+res.status); const json=await res.json(); if(!json.ok) throw new Error(json.error||'API 오류'); return json; }
+    async function apiPost(action, body){ const payload={action,...body}; const res=await fetch(API_URL,{method:'POST',cache:'no-store',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); if(!res.ok) throw new Error('HTTP '+res.status); const json=await res.json(); if(!json.ok) throw new Error(json.error||'API 오류'); return json; }
+    async function loadFromSheet(){ return withProgress('구글 스프레드시트 DB 불러오는 중',async()=>{ const json=await apiGet({action:'loadAll'}); const data=normalizeData(json.attendance||json.data||json.payload); if(!data) throw new Error('유효한 근태 JSON 행이 없습니다'); cacheSet(data); render(data,'sheet'); return data; }); }
+    function parseInput(){ const raw=$('jsonInput').value.trim(); if(!raw) throw new Error('붙여넣은 JSON이 없습니다'); const parsed=JSON.parse(raw); const data=normalizeData(parsed); if(!data) throw new Error('items 배열이 있는 근태 JSON이 아닙니다'); return data; }
+    async function saveToSheet(){ const data=parseInput(); const token=$('tokenInput').value.trim(); if(!token) throw new Error('WRITE_TOKEN을 입력해 주세요'); await withProgress('구글 스프레드시트 DB 저장 중',async()=>{ try{return await apiPost('saveAttendance',{token,payload:data});} catch(e){ const url=new URL(API_URL); url.searchParams.set('action','saveAttendance'); url.searchParams.set('token',token); url.searchParams.set('payload',JSON.stringify(data)); url.searchParams.set('_',Date.now()); if(url.toString().length>18000) throw e; const r=await fetch(url.toString(),{cache:'no-store'}); const j=await r.json(); if(!j.ok) throw new Error(j.error||'GET 저장 실패'); return j; }}); cacheSet(data); render(data,'saved'); $('jsonInput').value=''; $('adminStatus').className='status-line ok'; $('adminStatus').textContent='Google Sheets 저장 완료'; }
+    function bind(){ $('apiUrlInput').value=API_URL; $('tokenInput').value=localStorage.getItem(TOKEN_KEY)||''; $('adminBtn').onclick=()=>$('adminPanel').classList.toggle('show'); $('reloadBtn').onclick=()=>loadFromSheet().catch(()=>{}); $('loadBtn').onclick=()=>loadFromSheet().catch(e=>{setAdminErr(e.message)}); $('saveSettingsBtn').onclick=()=>{localStorage.setItem(TOKEN_KEY,$('tokenInput').value.trim()); setAdminOk('토큰 저장 완료')}; $('clearAdminBtn').onclick=()=>{localStorage.removeItem(TOKEN_KEY); $('tokenInput').value=''; setAdminOk('브라우저 저장 삭제 완료')}; $('previewBtn').onclick=()=>{try{const d=parseInput(); render(d,'preview'); setAdminOk('화면 미리보기 완료')}catch(e){setAdminErr(e.message)}}; $('saveBtn').onclick=()=>saveToSheet().catch(e=>setAdminErr(e.message)); $('clearInputBtn').onclick=()=>$('jsonInput').value=''; $('jsonInput').addEventListener('paste',e=>{const txt=(e.clipboardData||window.clipboardData).getData('text'); if(txt&&txt.trim().startsWith('{')){e.preventDefault(); $('jsonInput').value=txt;}}); $('jsonInput').addEventListener('focus',()=>{if($('jsonInput').value) $('jsonInput').select();}); }
+    function setAdminOk(msg){$('adminStatus').className='status-line ok';$('adminStatus').textContent=msg;} function setAdminErr(msg){$('adminStatus').className='status-line err';$('adminStatus').textContent=msg;}
+    function init(){ bind(); const cached=cacheGet(); if(cached) render(cached,'cache'); loadFromSheet().catch(()=>{ if(!cached) render(null,'none'); }); }
+    document.addEventListener('DOMContentLoaded',init);
+  })();
+  </script>
 </body>
 </html>
