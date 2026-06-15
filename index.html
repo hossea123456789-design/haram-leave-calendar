@@ -15,6 +15,13 @@
         <p class="eyebrow">FAMILY LEAVE CALENDAR</p>
         <h1>하람 퇴근 캘린더</h1>
         <p class="subtitle">근태 JSON을 Google Sheets에 저장하고, 가족 공유 화면에서 최신 퇴근 시간을 확인합니다.</p>
+        <div id="heroSyncToast" class="hero-sync-toast hidden" aria-live="polite">
+          <div class="hero-sync-line">
+            <span id="heroSyncText">구글 스프레드시트 DB 불러오는 중 . . . 0%</span>
+            <strong id="heroSyncPercent">0%</strong>
+          </div>
+          <div class="hero-sync-track"><i id="heroSyncBar"></i></div>
+        </div>
       </div>
       <div class="header-actions">
         <button id="refreshBtn" type="button" class="ghost-btn">시트 새로고침</button>
@@ -60,8 +67,6 @@
         </div>
 
         <textarea id="jsonInput" spellcheck="false" placeholder='크롬 확장에서 복사한 JSON을 여기에 붙여넣으세요.
-
-기존 내용이 있어도 새 JSON을 붙여넣으면 자동으로 전체 교체됩니다.
 
 예: { "source": "work_attendance_calendar", "year": 2026, "month": 6, "items": [...] }'></textarea>
 
@@ -147,20 +152,6 @@
         </section>
       </section>
     </main>
-  </div>
-
-
-  <div id="loadingOverlay" class="loading-overlay hidden" role="status" aria-live="polite" aria-label="데이터 로딩 중">
-    <div class="loading-card">
-      <div class="loading-spinner" aria-hidden="true"></div>
-      <div class="loading-copy">
-        <strong id="loadingTitle">구글 스프레드시트 DB 불러오는 중</strong>
-        <p id="loadingDetail">구글 스프레드시트 DB 불러오는 중 . . . ( 0 / 250 )</p>
-        <div class="loading-track" aria-hidden="true">
-          <div id="loadingBar" class="loading-bar" style="width: 0%"></div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>

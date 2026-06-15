@@ -83,6 +83,43 @@ button { cursor: pointer; }
   font-size: 16px;
   line-height: 1.55;
 }
+.hero-sync-toast {
+  width: min(460px, 100%);
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .13);
+  border: 1px solid rgba(255, 255, 255, .22);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, .18);
+}
+.hero-sync-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255,255,255,.92);
+  font-size: 13px;
+  font-weight: 900;
+}
+.hero-sync-line strong { color: #fff; white-space: nowrap; }
+.hero-sync-track {
+  height: 6px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.18);
+}
+.hero-sync-track i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: #fff;
+  transition: width .14s ease;
+}
+.hero-sync-toast.done .hero-sync-track i { background: #86efac; }
+.hero-sync-toast.error { background: rgba(127, 29, 29, .72); border-color: rgba(254, 202, 202, .38); }
+.hero-sync-toast.error .hero-sync-track i { background: #fecaca; }
 .header-actions, .admin-actions {
   display: flex;
   flex-wrap: wrap;
@@ -320,6 +357,7 @@ button:active { transform: translateY(1px); }
 @media (max-width: 860px) {
   .app-shell { width: min(100% - 20px, 720px); padding-top: 14px; }
   .hero, .today-card, .panel-title-row, .section-heading { flex-direction: column; align-items: stretch; }
+  .hero-sync-toast { width: 100%; }
   .header-actions, .admin-actions, .legend { justify-content: flex-start; }
   .settings-grid, .summary-grid { grid-template-columns: 1fr; }
   .weekday-row, .calendar-grid { gap: 5px; }

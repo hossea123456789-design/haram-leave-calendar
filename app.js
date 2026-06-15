@@ -1,12 +1,12 @@
-const APP_VERSION = 'v0.5';
+const APP_VERSION = 'v0.6';
 const STORAGE_KEY = 'wifeLeaveCalendar.attendanceJson.v5';
 const API_URL_STORAGE_KEY = 'wifeLeaveCalendar.googleScriptUrl.v2';
 const WRITE_TOKEN_STORAGE_KEY = 'wifeLeaveCalendar.writeToken.v2';
 
-// GitHub Pages에 올리기 전 Apps Script /exec URL을 여기에 넣으면
-// 와이프 휴대폰에서도 별도 설정 없이 자동으로 Google Sheets 최신 데이터를 불러옵니다.
+// 기본 Apps Script /exec URL입니다.
+// 보기 전용 기기에서는 관리자 설정 없이 이 주소로 Google Sheets 최신 데이터를 불러옵니다.
 const CONFIG = {
-  SHEETS_API_URL: 'https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec',
+  SHEETS_API_URL: 'https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHIRGu1__5yth-oxl4rhc/exec',
   AUTO_LOAD_FROM_SHEETS: true,
 };
 
@@ -18,7 +18,7 @@ const state = {
 const loadingState = {
   timer: null,
   value: 0,
-  total: 250,
+  percent: 0,
   label: '구글 스프레드시트 DB 불러오는 중',
 };
 
@@ -80,10 +80,10 @@ function collectElements() {
     calendarGrid: byId('calendarGrid'),
     weekList: byId('weekList'),
     rawJson: byId('rawJson'),
-    loadingOverlay: document.getElementById('loadingOverlay'),
-    loadingTitle: document.getElementById('loadingTitle'),
-    loadingDetail: document.getElementById('loadingDetail'),
-    loadingBar: document.getElementById('loadingBar'),
+    heroSyncToast: byId('heroSyncToast'),
+    heroSyncText: byId('heroSyncText'),
+    heroSyncPercent: byId('heroSyncPercent'),
+    heroSyncBar: byId('heroSyncBar'),
     toast: byId('toast'),
   });
 }
@@ -601,7 +601,7 @@ async function loadFromSheets(options = {}) {
     return null;
   }
 
-  const loading = startLoadingProgress('구글 스프레드시트 DB 불러오는 중', 250);
+  const loading = startLoadingProgress('구글 스프레드시트 DB 불러오는 중');
   updateSyncStatus('Google Sheets에서 최신 데이터를 불러오는 중입니다...');
   try {
     const response = await jsonpRequest(apiUrl, { action: 'load' });
@@ -642,7 +642,7 @@ async function saveToSheets(data) {
     return false;
   }
 
-  const loading = startLoadingProgress('구글 스프레드시트 DB 저장 중', 250);
+  const loading = startLoadingProgress('구글 스프레드시트 DB 저장 중');
   updateSyncStatus('Google Sheets에 저장하는 중입니다...');
   try {
     const payload = encodeBase64Url(JSON.stringify(data));
@@ -728,49 +728,44 @@ function postFormToSheets(apiUrl, fields) {
   });
 }
 
-function startLoadingProgress(label, total = 250) {
-  if (!els.loadingOverlay || !els.loadingTitle || !els.loadingDetail || !els.loadingBar) {
-    return { active: false };
-  }
-
+function startLoadingProgress(label) {
   window.clearInterval(loadingState.timer);
-  loadingState.value = 0;
-  loadingState.total = total;
+  loadingState.percent = 0;
   loadingState.label = label;
 
-  els.loadingTitle.textContent = label;
-  els.loadingOverlay.classList.remove('hidden');
-  els.loadingOverlay.classList.remove('error');
+  els.heroSyncToast.classList.remove('hidden', 'error', 'done');
   updateLoadingProgress(0);
 
   loadingState.timer = window.setInterval(() => {
-    const remaining = loadingState.total - loadingState.value;
-    if (remaining <= 18) return;
-    const step = Math.max(1, Math.min(17, Math.ceil(remaining * 0.08)));
-    updateLoadingProgress(Math.min(loadingState.value + step, loadingState.total - 12));
-  }, 110);
+    if (loadingState.percent >= 94) return;
+    const remaining = 95 - loadingState.percent;
+    const step = Math.max(1, Math.min(9, Math.ceil(remaining * 0.12)));
+    updateLoadingProgress(Math.min(95, loadingState.percent + step));
+  }, 120);
 
-  return { active: true, label, total };
+  return { active: true, label };
 }
 
-function updateLoadingProgress(value) {
-  loadingState.value = Math.max(0, Math.min(loadingState.total, Math.round(value)));
-  const text = `${loadingState.label} . . . ( ${loadingState.value} / ${loadingState.total} )`;
-  const percent = loadingState.total ? (loadingState.value / loadingState.total) * 100 : 0;
-  if (els.loadingDetail) els.loadingDetail.textContent = text;
-  if (els.loadingBar) els.loadingBar.style.width = `${percent}%`;
+function updateLoadingProgress(percent) {
+  loadingState.percent = Math.max(0, Math.min(100, Math.round(percent)));
+  const text = `${loadingState.label} . . . ${loadingState.percent}%`;
+  els.heroSyncText.textContent = text;
+  els.heroSyncPercent.textContent = `${loadingState.percent}%`;
+  els.heroSyncBar.style.width = `${loadingState.percent}%`;
 }
 
 function finishLoadingProgress(handle, message, isError = false) {
-  if (!handle?.active || !els.loadingOverlay) return;
+  if (!handle?.active) return;
   window.clearInterval(loadingState.timer);
-  updateLoadingProgress(loadingState.total);
-  if (els.loadingTitle) els.loadingTitle.textContent = message;
-  els.loadingOverlay.classList.toggle('error', Boolean(isError));
+  updateLoadingProgress(isError ? Math.max(loadingState.percent, 100) : 100);
+  els.heroSyncText.textContent = message;
+  els.heroSyncPercent.textContent = isError ? '오류' : '완료';
+  els.heroSyncToast.classList.toggle('error', Boolean(isError));
+  els.heroSyncToast.classList.toggle('done', !isError);
   window.setTimeout(() => {
-    els.loadingOverlay.classList.add('hidden');
-    els.loadingOverlay.classList.remove('error');
-  }, isError ? 1200 : 450);
+    els.heroSyncToast.classList.add('hidden');
+    els.heroSyncToast.classList.remove('error', 'done');
+  }, isError ? 2400 : 1200);
 }
 
 function delay(ms) {

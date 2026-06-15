@@ -1,15 +1,23 @@
-하람 퇴근 캘린더 v0.4
+하람 퇴근 캘린더 웹앱 v0.6
 
-GitHub Pages 업로드 파일:
+GitHub Pages에 올릴 파일:
 - index.html
 - styles.css
 - app.js
 - manifest.webmanifest
 
-Google Apps Script에는 google-apps-script/Code.gs 또는 별도 제공된 wife-leave-calendar-Code-v004-token-set.txt 전체를 붙여넣으세요.
+변경 사항:
+- 페이지 진입 시 전체 화면 로딩 팝업을 띄우지 않음
+- 기존 방문자는 브라우저 로컬 캐시 데이터를 먼저 즉시 표시
+- Google Sheets 최신 데이터는 상단 제목 영역의 작은 진행 표시로 백그라운드 로드
+- 진행률은 0~100% 퍼센트로 표시
+- 불러오기 완료 후 최신 데이터로 자동 갱신
+- JSON 입력창은 새 JSON 붙여넣기 시 기존 내용을 자동 교체
+- app.js에 기본 Apps Script /exec URL 반영
 
-중요 변경:
-- 저장은 긴 URL 문제를 피하기 위해 form POST로 전송합니다.
-- Code.gs에 doPost가 추가되어 있어야 저장됩니다.
-- Apps Script URL은 /exec로 끝나야 하며, 앱에서 자동 보정합니다.
-- 달력은 일월화수목금토 기준입니다.
+GitHub 반영:
+1. ZIP 압축 해제
+2. 위 4개 파일을 저장소 루트에 업로드/교체
+3. Commit changes
+4. GitHub Actions에서 Pages 배포 완료 확인
+5. 모바일은 ?v=6 형태로 캐시 우회 접속
