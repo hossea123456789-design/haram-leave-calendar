@@ -4,189 +4,82 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <title>하람 퇴근 캘린더 · Google Sheets v017</title>
+  <title>하람 퇴근 캘린더 · GitHub Sheets v019</title>
   <style>
-    :root{
-      --bg:#eef2f7;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;
-      --navy:#111827;--navy2:#1f2937;--green:#047857;--orange:#c2410c;--red:#b91c1c;--blue:#4338ca;--gray:#4b5563;
-      --shadow:0 14px 38px rgba(15,23,42,.10);--radius:24px;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",Arial,sans-serif;background:linear-gradient(180deg,#f7f9fc 0,#eef2f7 100%);color:var(--ink)}
-    .app{width:min(1180px,100%);margin:0 auto;padding:22px 20px 56px}
-    .hero{background:linear-gradient(135deg,#111827,#243247);color:#fff;border-radius:26px;padding:26px 30px;box-shadow:var(--shadow);position:relative;overflow:hidden}
-    .hero::after{content:"";position:absolute;inset:auto -80px -110px auto;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.08)}
-    .hero-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
-    .eyebrow{font-size:12px;font-weight:900;letter-spacing:.12em;color:#d1d5db}
-    .hero h1{margin:8px 0 10px;font-size:clamp(38px,5.2vw,58px);line-height:1.02;font-weight:1000;letter-spacing:-.055em}
-    .hero p{font-size:17px;line-height:1.5;color:#e5e7eb;margin:0}
-    .hero-actions{display:flex;gap:10px;align-items:center;z-index:1}.btn{border:0;border-radius:999px;padding:12px 18px;font-weight:900;font-size:15px;cursor:pointer;white-space:nowrap}.btn.primary{background:#fff;color:#111827}.btn.ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25)}.btn.dark{background:#111827;color:#fff}.btn.soft{background:#eef2ff;color:#3730a3}.btn.danger{background:#fee2e2;color:#b91c1c}.btn:disabled{opacity:.55;cursor:not-allowed}
-    .toast{position:fixed;z-index:99;top:18px;right:18px;width:min(520px,calc(100vw - 36px));background:rgba(15,23,42,.96);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:14px 16px;box-shadow:0 20px 70px rgba(0,0,0,.28);display:none}.toast.show{display:block}.toast.error{background:linear-gradient(135deg,#7f1d1d,#991b1b)}.toast.success{background:linear-gradient(135deg,#064e3b,#047857)}.toast-row{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:15px;font-weight:900}.progress{height:8px;border-radius:999px;background:rgba(255,255,255,.22);margin-top:10px;overflow:hidden}.progress>i{display:block;height:100%;width:0;background:#fff;border-radius:inherit;transition:width .18s ease}
-    .admin{display:none;margin-top:16px;background:#fff;border-radius:24px;padding:22px;box-shadow:var(--shadow)}.admin.show{display:block}.admin h2{margin:0 0 16px;font-size:24px;letter-spacing:-.04em}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:900;color:#6b7280;margin-bottom:8px}.field input,.field textarea{width:100%;border:1px solid var(--line);border-radius:16px;padding:13px 15px;font-size:15px;background:#fff;color:#111827}.field textarea{min-height:220px;background:#0f172a;color:#f8fafc;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical;line-height:1.5}.admin-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}.note{font-size:14px;color:#6b7280;line-height:1.5;margin-top:10px}.status-line{margin-top:12px;font-weight:800}.status-line.ok{color:#047857}.status-line.err{color:#b91c1c}
-    .summary{display:grid;grid-template-columns:1fr;gap:14px;margin:16px 0}.tile{background:#fff;border-radius:22px;padding:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}.tile.today{min-height:132px}.tile small{display:block;color:#6b7280;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.tile strong{display:block;font-size:clamp(42px,6vw,68px);line-height:1.04;margin:8px 0 8px;letter-spacing:-.045em}.tile p{margin:0;color:#6b7280;font-size:15px;line-height:1.45}.tile .today-caption{font-size:15px;color:#6b7280}
-    .panel{background:#fff;border-radius:24px;padding:22px;box-shadow:var(--shadow);margin-top:16px}.panel-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:16px}.panel h2{margin:0;font-size:24px;letter-spacing:-.04em}.legend{display:flex;gap:12px;flex-wrap:wrap;color:#4b5563;font-weight:800;font-size:13px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.dow{display:grid;grid-template-columns:repeat(7,1fr);gap:9px;margin:0 0 9px;color:#6b7280;font-weight:900;text-align:center}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:9px}.day{min-height:118px;border:1px solid var(--line);border-radius:15px;padding:12px;background:#fff}.day.blank{border:0;background:transparent}.day.today{outline:2px solid #111827}.date-row{display:flex;justify-content:space-between;align-items:center;font-weight:900}.date-num{font-size:19px}.weekday{font-size:12px;color:#6b7280}.main-time{font-size:26px;font-weight:1000;letter-spacing:-.035em;margin:18px 0 8px;white-space:nowrap}.main-time.green{color:var(--green)}.main-time.orange{color:var(--orange)}.main-time.red{color:var(--red)}.main-time.blue{color:var(--blue)}.main-time.gray{color:var(--gray)}.detail{font-size:12px;color:#6b7280;line-height:1.4}.corrected,.diag{display:none}.empty{background:#fff;border-radius:24px;padding:54px 18px;text-align:center;box-shadow:var(--shadow);margin-top:16px}.empty h2{font-size:30px;letter-spacing:-.04em;margin:0 0 12px}.empty p{font-size:16px;color:#6b7280;line-height:1.6;margin:0}
+    :root{--bg:#eef2f7;--card:#fff;--ink:#111827;--muted:#64748b;--line:#e5e7eb;--navy:#111827;--navy2:#243247;--green:#047857;--orange:#c2410c;--red:#b91c1c;--blue:#4338ca;--gray:#4b5563;--shadow:0 14px 38px rgba(15,23,42,.10);--radius:24px}
+    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",Arial,sans-serif;background:linear-gradient(180deg,#f8fafc 0,#eef2f7 100%);color:var(--ink)}
+    .app{width:min(1180px,100%);margin:0 auto;padding:22px 20px 56px}.hero{background:linear-gradient(135deg,#111827,#243247);color:#fff;border-radius:26px;padding:26px 30px;box-shadow:var(--shadow);position:relative;overflow:hidden}.hero:after{content:"";position:absolute;inset:auto -80px -110px auto;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.08)}
+    .hero-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.eyebrow{font-size:12px;font-weight:900;letter-spacing:.12em;color:#d1d5db}.hero h1{margin:8px 0 10px;font-size:clamp(38px,5.2vw,58px);line-height:1.02;font-weight:1000;letter-spacing:-.055em}.hero p{font-size:17px;line-height:1.5;color:#e5e7eb;margin:0}.hero-actions{display:flex;gap:10px;align-items:center;z-index:1}.btn{border:0;border-radius:999px;padding:12px 18px;font-weight:900;font-size:15px;cursor:pointer;white-space:nowrap}.btn.primary{background:#fff;color:#111827}.btn.ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25)}.btn.dark{background:#111827;color:#fff}.btn.soft{background:#eef2ff;color:#3730a3}.btn.danger{background:#fee2e2;color:#b91c1c}.btn:disabled{opacity:.55;cursor:not-allowed}
+    .toast{position:fixed;z-index:99;top:18px;right:18px;width:min(560px,calc(100vw - 36px));background:rgba(15,23,42,.96);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:14px 16px;box-shadow:0 20px 70px rgba(0,0,0,.28);display:none}.toast.show{display:block}.toast.error{background:linear-gradient(135deg,#7f1d1d,#991b1b)}.toast.success{background:linear-gradient(135deg,#064e3b,#047857)}.toast.warn{background:linear-gradient(135deg,#713f12,#a16207)}.toast-row{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:15px;font-weight:900}.progress{height:8px;border-radius:999px;background:rgba(255,255,255,.22);margin-top:10px;overflow:hidden}.progress>i{display:block;height:100%;width:0;background:#fff;border-radius:inherit;transition:width .18s ease}
+    .admin{display:none;margin-top:16px;background:#fff;border-radius:24px;padding:22px;box-shadow:var(--shadow)}.admin.show{display:block}.admin h2{margin:0 0 16px;font-size:24px;letter-spacing:-.04em}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:900;color:#6b7280;margin-bottom:8px}.field input,.field textarea{width:100%;border:1px solid var(--line);border-radius:16px;padding:13px 15px;font-size:15px;background:#fff;color:#111827}.field textarea{min-height:220px;background:#0f172a;color:#f8fafc;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical;line-height:1.5}.admin-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}.note{font-size:14px;color:#6b7280;line-height:1.5;margin-top:10px}.status-line{margin-top:12px;font-weight:800}.status-line.ok{color:#047857}.status-line.err{color:#b91c1c}.status-line.warn{color:#a16207}
+    .summary{display:grid;grid-template-columns:1fr;gap:14px;margin:16px 0}.tile{background:#fff;border-radius:22px;padding:24px;box-shadow:0 10px 30px rgba(15,23,42,.06)}.tile.today{min-height:132px}.tile small{display:block;color:#6b7280;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.tile strong{display:block;font-size:clamp(42px,6vw,68px);line-height:1.04;margin:8px 0 8px;letter-spacing:-.045em}.tile p{margin:0;color:#6b7280;font-size:15px;line-height:1.45}.panel{background:#fff;border-radius:24px;padding:22px;box-shadow:var(--shadow);margin-top:16px}.panel-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:16px}.panel h2{margin:0;font-size:24px;letter-spacing:-.04em}.legend{display:flex;gap:12px;flex-wrap:wrap;color:#4b5563;font-weight:800;font-size:13px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.dow{display:grid;grid-template-columns:repeat(7,1fr);gap:9px;margin:0 0 9px;color:#6b7280;font-weight:900;text-align:center}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:9px}.day{min-height:118px;border:1px solid var(--line);border-radius:15px;padding:12px;background:#fff}.day.blank{border:0;background:transparent}.day.today{outline:2px solid #111827}.date-row{display:flex;justify-content:space-between;align-items:center;font-weight:900}.date-num{font-size:19px}.weekday{font-size:12px;color:#6b7280}.main-time{font-size:26px;font-weight:1000;letter-spacing:-.035em;margin:18px 0 8px;white-space:nowrap}.main-time.green{color:var(--green)}.main-time.orange{color:var(--orange)}.main-time.red{color:var(--red)}.main-time.blue{color:var(--blue)}.main-time.gray{color:var(--gray)}.detail{font-size:12px;color:#6b7280;line-height:1.4}.empty{background:#fff;border-radius:24px;padding:54px 18px;text-align:center;box-shadow:var(--shadow);margin-top:16px}.empty h2{font-size:30px;letter-spacing:-.04em;margin:0 0 12px}.empty p{font-size:16px;color:#6b7280;line-height:1.6;margin:0}
+    .debug{display:none;margin-top:16px;background:#0f172a;color:#e5e7eb;border-radius:22px;padding:18px;box-shadow:var(--shadow)}.debug.show{display:block}.debug h2{margin:0 0 10px;color:#fff}.debug pre{max-height:360px;overflow:auto;background:#020617;border:1px solid #1e293b;border-radius:14px;padding:12px;font-size:12px;line-height:1.45;white-space:pre-wrap}.debug .debug-actions{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}.debug .btn{font-size:13px;padding:10px 14px}.debug-summary{font-size:13px;color:#cbd5e1;line-height:1.6}
     @media(max-width:900px){.app{padding:16px 12px 48px}.hero{padding:26px 22px}.hero-top{display:block}.hero-actions{margin-top:20px}.hero-actions .btn{flex:1}.tile{padding:22px}.calendar,.dow{grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}.day{min-height:104px;padding:9px}.main-time{font-size:21px}.detail{font-size:11px}.grid2{grid-template-columns:1fr}.panel{padding:17px}.panel-head{display:block}.legend{margin-top:12px}.toast{top:12px;left:12px;right:12px;width:auto}.hero h1{font-size:44px}.hero p{font-size:16px}}
-    @media(max-width:620px){.hero-actions{display:grid;grid-template-columns:1fr 1fr}.btn{font-size:14px;padding:12px 14px}.panel{padding:14px;border-radius:22px}.panel h2{font-size:22px}.panel-head{margin-bottom:12px}.legend{gap:8px;font-size:11px}.dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-bottom:6px;font-size:11px}.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.day{min-height:78px;margin:0;padding:7px 5px;border-radius:12px;overflow:hidden}.day.blank{display:block;visibility:hidden}.date-row{align-items:flex-start}.date-num{font-size:14px}.weekday{font-size:9px}.main-time{font-size:clamp(12px,3.7vw,16px);margin:12px 0 4px}.detail{font-size:9.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.empty h2{font-size:26px}.tile strong{font-size:clamp(42px,14vw,62px)}}
+    @media(max-width:620px){.hero-actions{display:grid;grid-template-columns:1fr 1fr}.btn{font-size:14px;padding:12px 14px}.panel{padding:14px;border-radius:22px}.panel h2{font-size:22px}.panel-head{margin-bottom:12px}.legend{gap:8px;font-size:11px}.dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-bottom:6px;font-size:11px}.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.day{min-height:78px;margin:0;padding:7px 5px;border-radius:12px;overflow:hidden}.day.blank{display:block;visibility:hidden}.date-num{font-size:14px}.weekday{font-size:9px}.main-time{font-size:clamp(12px,3.7vw,16px);margin:12px 0 4px}.detail{font-size:9.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.empty h2{font-size:26px}.tile strong{font-size:clamp(42px,14vw,62px)}}
     @media(max-width:430px){.app{padding-left:10px;padding-right:10px}.hero{padding:22px 18px}.hero h1{font-size:38px}.hero p{font-size:15px}.day{min-height:70px;padding:6px 4px}.main-time{font-size:12px;margin:10px 0 0}.detail{display:none}.weekday{font-size:8px}.date-num{font-size:13px}.legend{font-size:10px}.tile{padding:20px}}
   </style>
 </head>
 <body>
   <div class="toast" id="toast"><div class="toast-row"><span id="toastText">구글 스프레드시트 DB 불러오는 중 . . .</span><span id="toastPct">0%</span></div><div class="progress"><i id="toastBar"></i></div></div>
   <main class="app">
-    <section class="hero">
-      <div class="hero-top"><div><div class="eyebrow">FAMILY LEAVE CALENDAR · GITHUB SHEETS v017</div><h1>하람 퇴근 캘린더</h1><p>오늘 퇴근 시간과 월간 퇴근 예정만 간단히 확인합니다.</p></div><div class="hero-actions"><button class="btn ghost" id="reloadBtn">시트 새로고침</button><button class="btn primary" id="adminBtn">관리자</button></div></div>
-    </section>
+    <section class="hero"><div class="hero-top"><div><div class="eyebrow">FAMILY LEAVE CALENDAR · GITHUB SHEETS v019</div><h1>하람 퇴근 캘린더</h1><p>오늘 퇴근 시간과 월간 퇴근 예정만 간단히 확인합니다.</p></div><div class="hero-actions"><button class="btn ghost" id="reloadBtn">시트 새로고침</button><button class="btn primary" id="adminBtn">관리자</button></div></div></section>
     <section class="admin" id="adminPanel">
       <h2>Google Sheets 저장 설정</h2>
       <div class="grid2"><div class="field"><label>Apps Script Web App URL</label><input id="apiUrlInput" readonly /></div><div class="field"><label>WRITE_TOKEN</label><input id="tokenInput" type="password" placeholder="저장할 때만 입력" /></div></div>
-      <p class="note">보기 전용 기기는 관리자 정보가 필요 없습니다. 이 화면은 JSON을 시트에 저장할 때만 사용합니다.</p>
-      <div class="admin-actions"><button class="btn soft" id="saveSettingsBtn">토큰 저장</button><button class="btn" id="loadBtn">시트에서 불러오기</button><button class="btn danger" id="clearAdminBtn">브라우저 저장 삭제</button></div>
-      <div class="status-line" id="adminStatus"></div>
-      <hr style="border:0;border-top:1px solid var(--line);margin:22px 0" />
+      <p class="note">보기 전용 기기는 관리자 정보가 필요 없습니다. 이 화면은 JSON을 시트에 저장하거나 연결 로그를 확인할 때만 사용합니다.</p>
+      <div class="admin-actions"><button class="btn soft" id="saveSettingsBtn">토큰 저장</button><button class="btn" id="loadBtn">시트에서 불러오기</button><button class="btn" id="diagBtn">연결 진단</button><button class="btn" id="debugBtn">로그 보기</button><button class="btn danger" id="clearAdminBtn">브라우저 저장 삭제</button></div>
+      <div class="status-line" id="adminStatus"></div><hr style="border:0;border-top:1px solid var(--line);margin:22px 0" />
       <div class="field"><label>크롬 확장 JSON 붙여넣기</label><textarea id="jsonInput" placeholder='크롬 확장에서 복사한 JSON을 여기에 붙여넣으세요. 새로 붙여넣으면 기존 입력 내용은 자동으로 교체됩니다.'></textarea></div>
       <div class="admin-actions"><button class="btn soft" id="previewBtn">화면에만 미리보기</button><button class="btn dark" id="saveBtn">시트에 저장</button><button class="btn" id="clearInputBtn">입력창 비우기</button></div>
     </section>
-    <div id="diagnostics"></div>
+    <section class="debug" id="debugPanel"><h2>연결 로그</h2><div class="debug-summary" id="debugSummary"></div><div class="debug-actions"><button class="btn primary" id="copyLogBtn">로그 복사</button><button class="btn ghost" id="clearLogBtn">로그 비우기</button><button class="btn ghost" id="cacheClearBtn">근태 캐시 삭제</button></div><pre id="debugLog"></pre></section>
     <section id="content"><div class="empty"><h2>구글 스프레드시트 DB 불러오는 중</h2><p>기존 캐시가 있으면 먼저 표시하고, 최신 데이터가 도착하면 자동 갱신합니다.</p></div></section>
   </main>
-  <script>
-  (()=>{
-    'use strict';
-    const VERSION='v017';
-    const API_URL='https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec';
-    const CACHE_KEY='haram-leave-calendar-cache-v017';
-    const OLD_CACHE_KEYS=['haram-leave-calendar-cache-v016','haram-leave-calendar-cache-v015','haram-leave-calendar-cache-v014','haram-leave-calendar-cache-v013','haram-leave-calendar-cache-v012','haram-leave-calendar-cache-v011'];
-    const TOKEN_KEY='haram-leave-calendar-write-token';
-    const DOW=['일','월','화','수','목','금','토'];
-    const DOW_MON=['월','화','수','목','금','토','일'];
-    const $=(id)=>document.getElementById(id);
-    const state={data:null, source:'none', loading:false};
-
-    function pad(n){return String(n).padStart(2,'0')}
-    function toDateKey(y,m,d){return y+'-'+pad(m)+'-'+pad(d)}
-    function todayKey(){const d=new Date();return toDateKey(d.getFullYear(),d.getMonth()+1,d.getDate())}
-    function parseMin(t){if(!/^\d{1,2}:\d{2}$/.test(String(t||''))) return null; const [h,m]=String(t).split(':').map(Number); return h*60+m;}
-    function fmtMin(min){min=((min%1440)+1440)%1440; return pad(Math.floor(min/60))+':'+pad(min%60)}
-    function calcPlanned(item){const s=parseMin(item.start), target=parseMin(item.target), non=parseMin(item.nonWork)||0; if(s==null||target==null) return null; return fmtMin(s+target+non+60);}
-    function normalizeItem(item){const x={...item}; if(!x.date) return x; const d=new Date(x.date+'T00:00:00'); if(!x.weekday||!DOW.includes(x.weekday)) x.weekday=DOW[d.getDay()]; const workInfo=!!(x.start||x.leave||x.target) && x.type!=='vacation' && x.type!=='holiday' && x.type!=='weekend';
-      if(workInfo) x.type='work';
-      if(x.type==='work' && x.leaveKind==='planned'){
-        const c=calcPlanned(x);
-        if(c && x.leave && x.leave!==c){x.originalLeave=x.leave; x.leave=c; x.leaveSource=(x.leaveSource||'')+'+computedCorrection'; x.corrected=true;}
-        else if(!x.leave && c){x.leave=c; x.leaveSource='computed'; x.corrected=true;}
-      }
-      if(['vacation','holiday','weekend'].includes(x.type)){ if(x.type!=='vacation'){x.target=null;} x.start=null; x.nonWork=null; x.leave=null; x.leaveKind='none'; x.leaveSource='none'; }
-      return x;
-    }
-    function normalizeData(raw){ if(!raw||!Array.isArray(raw.items)) return null; const data={...raw, items:raw.items.map(normalizeItem)}; data.items.sort((a,b)=>String(a.date).localeCompare(String(b.date))); return data; }
-    function itemMap(data){const m=new Map(); (data?.items||[]).forEach(i=>m.set(i.date,i)); return m;}
-    function classifyLeave(time,type){ if(type==='vacation') return 'blue'; if(type==='holiday'||type==='weekend') return 'blue'; const mins=parseMin(time); if(mins==null) return 'gray'; if(mins<18*60) return 'green'; if(mins<21*60) return 'orange'; return 'red'; }
-    function displayText(item){ if(!item) return '정보 없음'; if(item.type==='vacation') return item.label||'휴가'; if(item.type==='holiday') return item.label||'공휴일'; if(item.type==='weekend') return '주말'; return item.leave || '정보 없음'; }
-    function typeText(item){ if(!item) return '정보 없음'; if(item.type==='work') return item.leave ? '퇴근 표시' : '근무 정보 없음'; return item.label || item.type; }
-    function makeDiagnostics(data){ const div=$('diagnostics'); if(div) div.innerHTML=''; }
-    function render(data, source='sheet'){ state.data=data; state.source=source; makeDiagnostics(data); const root=$('content'); if(!data){ root.innerHTML='<div class="empty"><h2>아직 표시할 근태 데이터가 없습니다.</h2><p>Google Sheets에 저장된 근태 JSON이 없거나 유효한 최신 행을 찾지 못했습니다.</p></div>'; return; }
-      const map=itemMap(data), today=todayKey(), todayItem=map.get(today);
-      root.innerHTML=`<section class="summary"><div class="tile today"><small>TODAY</small><strong class="${classifyLeave(todayItem?.leave,todayItem?.type)}">${displayText(todayItem)}</strong><p class="today-caption">${todayItem?detailLine(todayItem):'오늘 근무 정보 없음'}</p></div></section>${calendarHtml(data)}`;
-    }
-    function detailLine(i){ if(!i) return ''; if(i.type==='work') return i.start ? `출근 ${i.start}` : ''; return i.label||typeText(i); }
-    function calendarHtml(data){ const y=Number(data.year), m=Number(data.month); const first=new Date(y,m-1,1).getDay(); const days=new Date(y,m,0).getDate(); const map=itemMap(data); let cells=''; for(let i=0;i<first;i++) cells+='<div class="day blank"></div>'; for(let d=1;d<=days;d++){ const key=toDateKey(y,m,d), it=map.get(key); const wd=DOW[new Date(y,m-1,d).getDay()]; const cls=classifyLeave(it?.leave,it?.type); cells+=`<article class="day ${key===todayKey()?'today':''}"><div class="date-row"><span class="date-num">${d}</span><span class="weekday">${wd}</span></div><div class="main-time ${cls}">${displayText(it)}</div><div class="detail">${detailLine(it)}</div></article>`; }
-      return `<section class="panel"><div class="panel-head"><div><small class="eyebrow" style="color:#6b7280">MONTHLY</small><h2>${data.year}년 ${data.month}월</h2></div><div class="legend"><span><i class="dot" style="background:#047857"></i>보통</span><span><i class="dot" style="background:#c2410c"></i>늦음</span><span><i class="dot" style="background:#b91c1c"></i>익일</span><span><i class="dot" style="background:#4338ca"></i>휴무</span><span><i class="dot" style="background:#4b5563"></i>정보 없음</span></div></div><div class="dow">${DOW.map(x=>`<div>${x}</div>`).join('')}</div><div class="calendar">${cells}</div></section>`; }
-    function weekHtml(data){ const map=itemMap(data); const now=new Date(); const start=new Date(now); start.setDate(now.getDate()-now.getDay()); const cards=[]; for(let i=0;i<7;i++){ const d=new Date(start); d.setDate(start.getDate()+i); const key=toDateKey(d.getFullYear(),d.getMonth()+1,d.getDate()); const it=map.get(key); cards.push(`<div class="week-card"><div class="date-row"><b>${DOW[i]}</b><span class="weekday">${d.getMonth()+1}/${d.getDate()}</span></div><div class="main-time ${classifyLeave(it?.leave,it?.type)}" style="font-size:24px;margin:14px 0 6px">${displayText(it)}</div><div class="detail">${typeText(it)}</div></div>`); }
-      return `<section class="panel"><div class="panel-head"><div><small class="eyebrow" style="color:#6b7280">THIS WEEK</small><h2>이번 주 퇴근 요약</h2></div></div><div class="week-list">${cards.join('')}</div></section>`; }
-    function cacheSet(data){ try{localStorage.setItem(CACHE_KEY,JSON.stringify({savedAt:new Date().toISOString(),data}));}catch(e){} }
-    function cacheGet(){ const keys=[CACHE_KEY,...OLD_CACHE_KEYS]; for(const key of keys){ try{const raw=localStorage.getItem(key); if(!raw) continue; const data=normalizeData(JSON.parse(raw).data); if(data){ if(key!==CACHE_KEY) cacheSet(data); return data; }}catch(e){} } return null; }
-    function toast(kind,text,pct=0,hold=0){ const t=$('toast'), bar=$('toastBar'); t.className='toast show '+(kind||''); $('toastText').textContent=text; $('toastPct').textContent=Math.round(pct)+'%'; bar.style.width=Math.max(0,Math.min(100,pct))+'%'; if(hold){clearTimeout(toast._timer); toast._timer=setTimeout(()=>t.classList.remove('show'),hold);} }
-    async function withProgress(label, task){ let p=0; toast('',label+' . . .',0); const timer=setInterval(()=>{p=Math.min(94,p+Math.max(1,Math.round((95-p)*0.12))); toast('',label+' . . .',p);},180); try{const res=await task(); clearInterval(timer); toast('success',label+' 완료',100,1800); return res;}catch(e){clearInterval(timer); toast('error',label+' 실패: '+(e.message||e),100,5200); throw e;} }
-    function apiJsonp(params, timeoutMs=12000){
-      return new Promise((resolve,reject)=>{
-        const cb='__haramLeaveJsonp_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-        const url=new URL(API_URL);
-        Object.entries(params||{}).forEach(([k,v])=>url.searchParams.set(k,v));
-        url.searchParams.set('callback',cb);
-        url.searchParams.set('_',Date.now());
-        const script=document.createElement('script');
-        let done=false;
-        const cleanup=()=>{ try{delete window[cb];}catch(e){window[cb]=undefined;} script.remove(); clearTimeout(timer); };
-        const timer=setTimeout(()=>{ if(done) return; done=true; cleanup(); reject(new Error('Apps Script 응답 시간 초과')); },timeoutMs);
-        window[cb]=(json)=>{ if(done) return; done=true; cleanup(); if(!json||json.ok===false) reject(new Error((json&&json.error)||'API 오류')); else resolve(json); };
-        script.onerror=()=>{ if(done) return; done=true; cleanup(); reject(new Error('Apps Script 스크립트 로드 실패')); };
-        script.src=url.toString();
-        document.head.appendChild(script);
-      });
-    }
-    function apiFrameLoad(params, timeoutMs=15000){
-      return new Promise((resolve,reject)=>{
-        const requestId='load_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-        const url=new URL(API_URL);
-        url.searchParams.set('action','frame');
-        url.searchParams.set('op','load');
-        url.searchParams.set('requestId',requestId);
-        url.searchParams.set('_',Date.now());
-        const iframe=document.createElement('iframe');
-        iframe.style.display='none';
-        iframe.setAttribute('aria-hidden','true');
-        let done=false;
-        const cleanup=()=>{ window.removeEventListener('message',onMessage); iframe.remove(); clearTimeout(timer); };
-        const timer=setTimeout(()=>{ if(done) return; done=true; cleanup(); reject(new Error('Apps Script iframe 응답 시간 초과')); },timeoutMs);
-        const onMessage=(event)=>{
-          const msg=event.data||{};
-          if(!msg || msg.source!=='haram-leave-calendar-appscript' || msg.requestId!==requestId) return;
-          done=true; cleanup();
-          const json=msg.response || msg.payload || msg;
-          if(!json || json.ok===false) reject(new Error((json&&json.error)||'API 오류'));
-          else resolve(json);
-        };
-        window.addEventListener('message',onMessage);
-        iframe.onerror=()=>{ if(done) return; done=true; cleanup(); reject(new Error('Apps Script iframe 로드 실패')); };
-        iframe.src=url.toString();
-        document.body.appendChild(iframe);
-      });
-    }
-    function apiPostFrame(action, body, timeoutMs=18000){
-      return new Promise((resolve,reject)=>{
-        const requestId='save_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-        const iframe=document.createElement('iframe');
-        iframe.name='haramSaveFrame_'+requestId;
-        iframe.style.display='none';
-        const form=document.createElement('form');
-        form.method='POST';
-        form.action=API_URL;
-        form.target=iframe.name;
-        form.style.display='none';
-        const add=(name,value)=>{ const input=document.createElement('input'); input.type='hidden'; input.name=name; input.value=typeof value==='string'?value:JSON.stringify(value); form.appendChild(input); };
-        add('action',action); add('requestId',requestId);
-        Object.entries(body||{}).forEach(([k,v])=>add(k,v));
-        let done=false;
-        const cleanup=()=>{ window.removeEventListener('message',onMessage); form.remove(); iframe.remove(); clearTimeout(timer); };
-        const timer=setTimeout(()=>{ if(done) return; done=true; cleanup(); reject(new Error('Apps Script 저장 응답 시간 초과')); },timeoutMs);
-        const onMessage=(event)=>{
-          const msg=event.data||{};
-          if(!msg || msg.source!=='haram-leave-calendar-appscript' || msg.requestId!==requestId) return;
-          done=true; cleanup();
-          const json=msg.response || msg;
-          if(!json.ok) reject(new Error(json.error||'저장 실패'));
-          else resolve(json);
-        };
-        window.addEventListener('message',onMessage);
-        document.body.appendChild(iframe); document.body.appendChild(form); form.submit();
-      });
-    }
-    async function apiGet(params){
-      try { return await apiFrameLoad(params); }
-      catch(frameErr){
-        try { return await apiJsonp(params); }
-        catch(jsonpErr){ throw new Error('Apps Script 로드 실패: iframe='+(frameErr.message||frameErr)+' / jsonp='+(jsonpErr.message||jsonpErr)); }
-      }
-    }
-    async function apiPost(action, body){ return await apiPostFrame(action, body); }
-    async function loadFromSheet(){ return withProgress('구글 스프레드시트 DB 불러오는 중',async()=>{ const json=await apiGet({action:'loadAll'}); const data=normalizeData(json.attendance||json.data||json.payload); if(!data) throw new Error('유효한 근태 JSON 행이 없습니다'); cacheSet(data); render(data,'sheet'); return data; }); }
-    function parseInput(){ const raw=$('jsonInput').value.trim(); if(!raw) throw new Error('붙여넣은 JSON이 없습니다'); const parsed=JSON.parse(raw); const data=normalizeData(parsed); if(!data) throw new Error('items 배열이 있는 근태 JSON이 아닙니다'); return data; }
-    async function saveToSheet(){ const data=parseInput(); const token=$('tokenInput').value.trim(); if(!token) throw new Error('WRITE_TOKEN을 입력해 주세요'); await withProgress('구글 스프레드시트 DB 저장 중',async()=> await apiPost('saveAttendance',{token,payload:data})); cacheSet(data); render(data,'saved'); $('jsonInput').value=''; $('adminStatus').className='status-line ok'; $('adminStatus').textContent='Google Sheets 저장 완료'; }
-    function bind(){ $('apiUrlInput').value=API_URL; $('tokenInput').value=localStorage.getItem(TOKEN_KEY)||''; $('adminBtn').onclick=()=>$('adminPanel').classList.toggle('show'); $('reloadBtn').onclick=()=>loadFromSheet().catch(()=>{}); $('loadBtn').onclick=()=>loadFromSheet().catch(e=>{setAdminErr(e.message)}); $('saveSettingsBtn').onclick=()=>{localStorage.setItem(TOKEN_KEY,$('tokenInput').value.trim()); setAdminOk('토큰 저장 완료')}; $('clearAdminBtn').onclick=()=>{localStorage.removeItem(TOKEN_KEY); $('tokenInput').value=''; setAdminOk('브라우저 저장 삭제 완료')}; $('previewBtn').onclick=()=>{try{const d=parseInput(); render(d,'preview'); setAdminOk('화면 미리보기 완료')}catch(e){setAdminErr(e.message)}}; $('saveBtn').onclick=()=>saveToSheet().catch(e=>setAdminErr(e.message)); $('clearInputBtn').onclick=()=>$('jsonInput').value=''; $('jsonInput').addEventListener('paste',e=>{const txt=(e.clipboardData||window.clipboardData).getData('text'); if(txt&&txt.trim().startsWith('{')){e.preventDefault(); $('jsonInput').value=txt;}}); $('jsonInput').addEventListener('focus',()=>{if($('jsonInput').value) $('jsonInput').select();}); }
-    function setAdminOk(msg){$('adminStatus').className='status-line ok';$('adminStatus').textContent=msg;} function setAdminErr(msg){$('adminStatus').className='status-line err';$('adminStatus').textContent=msg;}
-    function init(){ bind(); const cached=cacheGet(); if(cached) render(cached,'cache'); loadFromSheet().catch(()=>{ if(!cached) render(null,'none'); }); }
-    document.addEventListener('DOMContentLoaded',init);
-  })();
-  </script>
+<script>
+(()=>{'use strict';
+const VERSION='v019';
+const API_URL='https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec';
+const CACHE_KEY='haram-leave-calendar-cache-v019';
+const OLD_CACHE_KEYS=['haram-leave-calendar-cache-v018','haram-leave-calendar-cache-v017','haram-leave-calendar-cache-v016','haram-leave-calendar-cache-v015','haram-leave-calendar-cache-v014','haram-leave-calendar-cache-v013','haram-leave-calendar-cache-v012','haram-leave-calendar-cache-v011'];
+const TOKEN_KEY='haram-leave-calendar-token';
+const LOG_KEY='haram-leave-calendar-debug-log-v018';
+const DOW=['일','월','화','수','목','금','토'];
+let state={data:null,source:'none',lastError:null,loadSeq:0};
+const $=id=>document.getElementById(id);
+function nowIso(){return new Date().toISOString()}
+function safeObj(o){try{return JSON.parse(JSON.stringify(o))}catch(e){return String(o)}}
+function log(stage, detail={}){const row={t:nowIso(),v:VERSION,stage,detail:safeObj(detail)}; try{console.log('[HLC]',row); const arr=JSON.parse(localStorage.getItem(LOG_KEY)||'[]'); arr.push(row); while(arr.length>300) arr.shift(); localStorage.setItem(LOG_KEY,JSON.stringify(arr));}catch(e){} renderDebug(false); return row;}
+function getLogs(){try{return JSON.parse(localStorage.getItem(LOG_KEY)||'[]')}catch(e){return[]}}
+function renderDebug(forceShow){const panel=$('debugPanel'); if(!panel) return; const logs=getLogs(); $('debugSummary').textContent=`버전 ${VERSION} · 로그 ${logs.length}건 · 데이터 ${state.data?state.data.year+'년 '+state.data.month+'월':'없음'} · 출처 ${state.source||'none'}${state.lastError?' · 마지막 오류 '+state.lastError:''}`; $('debugLog').textContent=logs.map(x=>`${x.t} [${x.stage}] ${JSON.stringify(x.detail)}`).join('\n'); if(forceShow) panel.classList.add('show');}
+function pad(n){return String(n).padStart(2,'0')} function toDateKey(y,m,d){return `${y}-${pad(m)}-${pad(d)}`}
+function todayKey(){const d=new Date();return toDateKey(d.getFullYear(),d.getMonth()+1,d.getDate())}
+function normalizeData(data){ if(!data||!Array.isArray(data.items)) return null; return data; }
+function itemMap(data){const m=new Map();(data?.items||[]).forEach(i=>{if(i&&i.date)m.set(i.date,i)});return m}
+function typeText(i){if(!i)return'정보 없음'; if(i.type==='weekend')return'주말'; if(i.type==='holiday'||i.type==='vacation')return i.label||'휴무'; return i.leave||'정보 없음'}
+function displayText(i){if(!i)return'정보 없음'; if(i.type==='work')return i.leave||'정보 없음'; return i.label||typeText(i)}
+function classifyLeave(leave,type){ if(type==='vacation'||type==='holiday'||type==='weekend') return 'blue'; if(!leave) return 'gray'; const [h,m]=String(leave).split(':').map(Number); const mins=h*60+(m||0); if(leave==='00:00'||mins<6*60) return 'red'; if(mins>=22*60) return 'red'; if(mins>=20*60) return 'orange'; return 'green'; }
+function detailLine(i){if(!i)return''; if(i.type==='work')return i.start?`출근 ${i.start}`:''; return i.label||typeText(i)}
+function render(data, source='sheet'){state.data=data; state.source=source; log('render.start',{source,hasData:!!data,items:data?.items?.length||0}); const root=$('content'); if(!data){root.innerHTML='<div class="empty"><h2>아직 표시할 근태 데이터가 없습니다.</h2><p>Google Sheets에 저장된 근태 JSON이 없거나 유효한 최신 행을 찾지 못했습니다.</p></div>'; renderDebug(false); return;} const map=itemMap(data), ti=map.get(todayKey()); root.innerHTML=`<section class="summary"><div class="tile today"><small>TODAY</small><strong class="${classifyLeave(ti?.leave,ti?.type)}">${displayText(ti)}</strong><p>${ti?detailLine(ti):'오늘 근무 정보 없음'}</p></div></section>${calendarHtml(data)}`; renderDebug(false);}
+function calendarHtml(data){const y=Number(data.year),m=Number(data.month),first=new Date(y,m-1,1).getDay(),days=new Date(y,m,0).getDate(),map=itemMap(data); let cells=''; for(let i=0;i<first;i++)cells+='<div class="day blank"></div>'; for(let d=1;d<=days;d++){const key=toDateKey(y,m,d),it=map.get(key),wd=DOW[new Date(y,m-1,d).getDay()],cls=classifyLeave(it?.leave,it?.type); cells+=`<article class="day ${key===todayKey()?'today':''}"><div class="date-row"><span class="date-num">${d}</span><span class="weekday">${wd}</span></div><div class="main-time ${cls}">${displayText(it)}</div><div class="detail">${detailLine(it)}</div></article>`;} return `<section class="panel"><div class="panel-head"><div><small class="eyebrow" style="color:#6b7280">MONTHLY</small><h2>${data.year}년 ${data.month}월</h2></div><div class="legend"><span><i class="dot" style="background:#047857"></i>18~20시</span><span><i class="dot" style="background:#c2410c"></i>20~22시</span><span><i class="dot" style="background:#b91c1c"></i>22시 이후/00시</span><span><i class="dot" style="background:#4338ca"></i>휴무</span><span><i class="dot" style="background:#4b5563"></i>정보 없음</span></div></div><div class="dow">${DOW.map(x=>`<div>${x}</div>`).join('')}</div><div class="calendar">${cells}</div></section>`;}
+function cacheSet(data){try{localStorage.setItem(CACHE_KEY,JSON.stringify({savedAt:nowIso(),data}));log('cache.set',{key:CACHE_KEY,items:data?.items?.length||0});}catch(e){log('cache.set.fail',{error:e.message})}}
+function cacheGet(){const keys=[CACHE_KEY,...OLD_CACHE_KEYS]; for(const key of keys){try{const raw=localStorage.getItem(key); if(!raw) continue; const data=normalizeData(JSON.parse(raw).data); if(data){if(key!==CACHE_KEY) cacheSet(data); log('cache.hit',{key,items:data.items.length}); return data;} log('cache.invalid',{key});}catch(e){log('cache.read.fail',{key,error:e.message})}} log('cache.miss'); return null;}
+function toast(kind,text,pct=0,hold=0){const t=$('toast'),bar=$('toastBar'); t.className='toast show '+(kind||''); $('toastText').textContent=text; $('toastPct').textContent=Math.round(pct)+'%'; bar.style.width=Math.max(0,Math.min(100,pct))+'%'; if(hold){clearTimeout(toast._timer); toast._timer=setTimeout(()=>t.classList.remove('show'),hold)}}
+async function withProgress(label,task,timeoutMs=10000){let p=0;toast('',label+' . . .',0);log('progress.start',{label,timeoutMs}); const started=Date.now(); const timer=setInterval(()=>{const elapsed=Date.now()-started; p=Math.min(88,Math.max(p+3, Math.round((elapsed/timeoutMs)*85)));toast('',label+' . . .',p)},160); try{const res=await promiseTimeout(task(),timeoutMs,label+' 제한 시간 초과'); clearInterval(timer); toast('success',label+' 완료',100,1500); log('progress.success',{label,elapsedMs:Date.now()-started}); return res;}catch(e){clearInterval(timer); state.lastError=e.message||String(e); toast('error',label+' 실패: '+state.lastError,100,8500); log('progress.fail',{label,error:state.lastError,elapsedMs:Date.now()-started}); renderDebug(false); throw e;}}
+function promiseTimeout(p,ms,label){return new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error(label||'timeout')),ms); Promise.resolve(p).then(v=>{clearTimeout(timer);resolve(v)},e=>{clearTimeout(timer);reject(e)})})}
+function apiJsonp(params={},timeoutMs=9000){return new Promise((resolve,reject)=>{const cb='__hlcJsonp_'+Date.now()+'_'+Math.random().toString(36).slice(2); const url=new URL(API_URL); Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v)); url.searchParams.set('callback',cb); url.searchParams.set('_',Date.now()); const script=document.createElement('script'); let done=false; log('api.jsonp.start',{url:url.toString().replace(/callback=[^&]+/,'callback=...')}); const cleanup=()=>{try{delete window[cb]}catch(e){window[cb]=undefined} script.remove(); clearTimeout(timer)}; const timer=setTimeout(()=>{if(done)return;done=true;cleanup();log('api.jsonp.timeout',{timeoutMs});reject(new Error('JSONP 응답 시간 초과'))},timeoutMs); window[cb]=json=>{if(done)return;done=true;cleanup();log('api.jsonp.message',{ok:json?.ok,hasData:!!(json?.attendance||json?.data),reason:json?.reason,row:json?.rowNumber}); if(!json||json.ok===false)reject(new Error(json?.error||'JSONP API 오류')); else resolve(json)}; script.onerror=()=>{if(done)return;done=true;cleanup();log('api.jsonp.onerror');reject(new Error('JSONP 스크립트 로드 실패'))}; script.src=url.toString(); document.head.appendChild(script)})}
+function apiFrameLoad(params={},timeoutMs=9000){return new Promise((resolve,reject)=>{const requestId='load_'+Date.now()+'_'+Math.random().toString(36).slice(2); const url=new URL(API_URL); url.searchParams.set('action','frame'); url.searchParams.set('op',params.action==='ping'?'ping':'load'); url.searchParams.set('requestId',requestId); url.searchParams.set('_',Date.now()); const iframe=document.createElement('iframe'); iframe.style.display='none'; iframe.setAttribute('aria-hidden','true'); let done=false; log('api.frame.start',{requestId,op:url.searchParams.get('op')}); const cleanup=()=>{window.removeEventListener('message',onMessage); iframe.remove(); clearTimeout(timer)}; const timer=setTimeout(()=>{if(done)return;done=true;cleanup();log('api.frame.timeout',{requestId,timeoutMs});reject(new Error('iframe 응답 시간 초과'))},timeoutMs); const onMessage=event=>{const msg=event.data||{}; if(!msg||msg.source!=='haram-leave-calendar-appscript'){return} log('api.frame.message.any',{requestId:msg.requestId,expected:requestId,origin:event.origin}); if(msg.requestId!==requestId) return; done=true; cleanup(); const json=msg.response||msg.payload||msg; log('api.frame.message.match',{ok:json?.ok,hasData:!!(json?.attendance||json?.data),reason:json?.reason,row:json?.rowNumber}); if(!json||json.ok===false)reject(new Error(json?.error||'iframe API 오류')); else resolve(json)}; window.addEventListener('message',onMessage); iframe.onerror=()=>{if(done)return;done=true;cleanup();log('api.frame.onerror',{requestId});reject(new Error('iframe 로드 실패'))}; iframe.src=url.toString(); document.body.appendChild(iframe)})}
+function apiFetch(params={},timeoutMs=9000){const url=new URL(API_URL); Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v)); url.searchParams.set('_',Date.now()); log('api.fetch.start',{action:params.action||'loadAll'}); const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),timeoutMs); return fetch(url.toString(),{method:'GET',cache:'no-store',redirect:'follow',signal:ctrl.signal}).then(r=>{clearTimeout(timer);log('api.fetch.http',{status:r.status,type:r.type,url:r.url}); if(!r.ok)throw new Error('fetch HTTP '+r.status); return r.json()}).then(json=>{log('api.fetch.json',{ok:json?.ok,hasData:!!(json?.attendance||json?.data),reason:json?.reason,row:json?.rowNumber}); if(!json||json.ok===false)throw new Error(json?.error||'fetch API 오류'); return json}).catch(e=>{clearTimeout(timer);log('api.fetch.fail',{error:e.message||String(e)});throw e})}
+async function apiGet(params={action:'loadAll'}){const seq=++state.loadSeq; log('api.get.start',{seq,params,policy:'fetch-first-jsonp-fallback'}); try{const res=await apiFetch(params,8000); log('api.get.success',{seq,method:'fetch'}); return res;}catch(fetchErr){log('api.get.method.fail',{seq,method:'fetch',error:fetchErr.message||String(fetchErr)}); try{const res=await apiJsonp(params,5000); log('api.get.success',{seq,method:'jsonp'}); return res;}catch(jsonpErr){log('api.get.method.fail',{seq,method:'jsonp',error:jsonpErr.message||String(jsonpErr)}); throw new Error('fetch='+(fetchErr.message||fetchErr)+' / jsonp='+(jsonpErr.message||jsonpErr));}}}
+function apiPostFrame(action,body,timeoutMs=16000){return new Promise((resolve,reject)=>{const requestId='save_'+Date.now()+'_'+Math.random().toString(36).slice(2); const iframe=document.createElement('iframe'); iframe.name='hlcSaveFrame_'+requestId; iframe.style.display='none'; const form=document.createElement('form'); form.method='POST'; form.action=API_URL; form.target=iframe.name; form.style.display='none'; const add=(n,v)=>{const input=document.createElement('input');input.type='hidden';input.name=n;input.value=typeof v==='string'?v:JSON.stringify(v);form.appendChild(input)}; add('action',action); add('requestId',requestId); Object.entries(body||{}).forEach(([k,v])=>add(k,v)); let done=false; log('api.post.start',{action,requestId}); const cleanup=()=>{window.removeEventListener('message',onMessage);form.remove();iframe.remove();clearTimeout(timer)}; const timer=setTimeout(()=>{if(done)return;done=true;cleanup();log('api.post.timeout',{requestId});reject(new Error('저장 응답 시간 초과'))},timeoutMs); const onMessage=event=>{const msg=event.data||{}; if(!msg||msg.source!=='haram-leave-calendar-appscript'||msg.requestId!==requestId)return; done=true;cleanup();const json=msg.response||msg;log('api.post.message',{ok:json?.ok,error:json?.error}); if(!json.ok)reject(new Error(json.error||'저장 실패')); else resolve(json)}; window.addEventListener('message',onMessage); document.body.appendChild(iframe);document.body.appendChild(form);form.submit()})}
+async function loadFromSheet(){return withProgress('구글 스프레드시트 DB 불러오는 중',async()=>{const json=await apiGet({action:'loadAll'}); const raw=json.attendance||json.data||json.payload; log('load.response',{ok:json?.ok,hasRaw:!!raw,reason:json?.reason,row:json?.rowNumber,serverTime:json?.serverTime}); const data=normalizeData(raw); if(!data) throw new Error('유효한 근태 JSON 행이 없습니다: '+(json.reason||json.diagnostic||'no-data')); cacheSet(data); render(data,'sheet'); return data},10000)}
+function parseInput(){const raw=$('jsonInput').value.trim(); if(!raw)throw new Error('붙여넣은 JSON이 없습니다'); const parsed=JSON.parse(raw); const data=normalizeData(parsed); if(!data)throw new Error('items 배열이 있는 근태 JSON이 아닙니다'); return data}
+async function saveToSheet(){const data=parseInput(); const token=$('tokenInput').value.trim(); if(!token)throw new Error('WRITE_TOKEN을 입력해 주세요'); await withProgress('구글 스프레드시트 DB 저장 중',async()=>await apiPostFrame('saveAttendance',{token,payload:data}),22000); cacheSet(data); render(data,'saved'); $('jsonInput').value=''; setAdminOk('Google Sheets 저장 완료')}
+async function runDiagnostics(){setAdminWarn('연결 진단 중...'); renderDebug(true); const results={}; try{try{results.fetch=await apiFetch({action:'ping'},7000)}catch(e){results.fetchError=e.message||String(e)} try{results.jsonp=await apiJsonp({action:'ping'},5000)}catch(e){results.jsonpError=e.message||String(e)} try{results.frame=await apiFrameLoad({action:'ping'},5000)}catch(e){results.frameError=e.message||String(e)} try{results.debug=await apiFetch({action:'debug'},7000)}catch(e){results.debugError=e.message||String(e)} log('diagnostic.result',results); setAdminOk('진단 완료. 아래 연결 로그를 복사해서 원인 확인에 사용하세요.'); renderDebug(true);}catch(e){setAdminErr('진단 실패: '+(e.message||e)); log('diagnostic.fail',{error:e.message||String(e)}); renderDebug(true)}}
+function bind(){ $('apiUrlInput').value=API_URL; $('tokenInput').value=localStorage.getItem(TOKEN_KEY)||''; $('adminBtn').onclick=()=>{$('adminPanel').classList.toggle('show')}; $('reloadBtn').onclick=()=>loadFromSheet().catch(()=>{}); $('loadBtn').onclick=()=>loadFromSheet().catch(e=>setAdminErr(e.message)); $('diagBtn').onclick=()=>runDiagnostics(); $('debugBtn').onclick=()=>renderDebug(true); $('saveSettingsBtn').onclick=()=>{localStorage.setItem(TOKEN_KEY,$('tokenInput').value.trim());setAdminOk('토큰 저장 완료')}; $('clearAdminBtn').onclick=()=>{localStorage.removeItem(TOKEN_KEY);$('tokenInput').value='';setAdminOk('브라우저 저장 삭제 완료')}; $('previewBtn').onclick=()=>{try{const d=parseInput();render(d,'preview');setAdminOk('화면 미리보기 완료')}catch(e){setAdminErr(e.message)}}; $('saveBtn').onclick=()=>saveToSheet().catch(e=>setAdminErr(e.message)); $('clearInputBtn').onclick=()=>$('jsonInput').value=''; $('copyLogBtn').onclick=async()=>{const txt=$('debugLog').textContent||''; try{await navigator.clipboard.writeText(txt);setAdminOk('로그 복사 완료')}catch(e){setAdminErr('로그 복사 실패: '+e.message)}}; $('clearLogBtn').onclick=()=>{localStorage.removeItem(LOG_KEY);log('log.cleared');renderDebug(true)}; $('cacheClearBtn').onclick=()=>{[CACHE_KEY,...OLD_CACHE_KEYS].forEach(k=>localStorage.removeItem(k));log('cache.cleared');render(null,'none');renderDebug(true)}; $('jsonInput').addEventListener('paste',e=>{const txt=(e.clipboardData||window.clipboardData).getData('text'); if(txt&&txt.trim().startsWith('{')){e.preventDefault();$('jsonInput').value=txt}}); $('jsonInput').addEventListener('focus',()=>{if($('jsonInput').value)$('jsonInput').select()})}
+function setAdminOk(msg){$('adminStatus').className='status-line ok';$('adminStatus').textContent=msg} function setAdminErr(msg){$('adminStatus').className='status-line err';$('adminStatus').textContent=msg} function setAdminWarn(msg){$('adminStatus').className='status-line warn';$('adminStatus').textContent=msg}
+function init(){log('boot',{href:location.href,userAgent:navigator.userAgent,apiUrl:API_URL,online:navigator.onLine}); bind(); if(/[?&]debug=1/.test(location.search)){$('adminPanel').classList.add('show');renderDebug(true)} const cached=cacheGet(); if(cached){render(cached,'cache'); log('init.cache.first',{items:cached.items.length});} loadFromSheet().catch(e=>{log('init.load.fail',{error:e.message||String(e),hasCache:!!cached}); if(!cached)render(null,'none')})}
+document.addEventListener('DOMContentLoaded',init);
+})();
+</script>
 </body>
 </html>
