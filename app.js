@@ -6,7 +6,7 @@ const WRITE_TOKEN_STORAGE_KEY = 'wifeLeaveCalendar.writeToken.v2';
 // GitHub Pages에 올리기 전 Apps Script /exec URL을 여기에 넣으면
 // 와이프 휴대폰에서도 별도 설정 없이 자동으로 Google Sheets 최신 데이터를 불러옵니다.
 const CONFIG = {
-  SHEETS_API_URL: '',
+  SHEETS_API_URL: 'https://script.google.com/macros/s/AKfycbwgpvNOTMZQppKmLdYBj_238uGSN4fHlRGu1__5yth-oxl4rhc7zF5bS-magPk-weSM1w/exec',
   AUTO_LOAD_FROM_SHEETS: true,
 };
 
