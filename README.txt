@@ -34,3 +34,10 @@ v010 변경점:
 - 삼성 브라우저 등에 남은 과거 Apps Script URL localStorage 캐시 자동 정리
 - 기본 Apps Script /exec URL을 localStorage보다 우선 사용
 - 근태 데이터 로컬 캐시는 유지하고 DB 연결 캐시만 초기화
+
+
+[v0.11]
+- 삼성/모바일 브라우저에서 script.google.com JSONP 로드가 실패할 때 iframe bridge로 재시도합니다.
+- 이 버전은 Google Apps Script의 Code.gs도 함께 교체한 뒤 새 버전으로 배포해야 합니다.
+- GitHub에는 index.html, styles.css, app.js, manifest.webmanifest 4개를 교체합니다.
+- Apps Script에는 google-apps-script/Code.gs 내용을 붙여넣고 '배포 관리 > 새 버전'으로 배포합니다.

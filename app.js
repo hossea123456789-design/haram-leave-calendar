@@ -1,9 +1,9 @@
-const APP_VERSION = 'v0.10';
+const APP_VERSION = 'v0.11';
 const STORAGE_KEY = 'wifeLeaveCalendar.attendanceJson.v5';
 const API_URL_STORAGE_KEY = 'wifeLeaveCalendar.googleScriptUrl.v2';
 const WRITE_TOKEN_STORAGE_KEY = 'wifeLeaveCalendar.writeToken.v2';
 const CACHE_RESET_VERSION_KEY = 'wifeLeaveCalendar.cacheResetVersion';
-const CACHE_RESET_VERSION = '20260615-v010';
+const CACHE_RESET_VERSION = '20260615-v011';
 const LEGACY_API_URL_KEYS = [
   'wifeLeaveCalendar.googleScriptUrl',
   'wifeLeaveCalendar.googleScriptUrl.v1',
@@ -143,7 +143,7 @@ function resetStaleBrowserState() {
   const defaultUrl = normalizeApiUrl(DEFAULT_SHEETS_API_URL);
   const removedKeys = [];
 
-  // v010부터는 삼성 브라우저 등에 남아 있던 과거 DB URL을 강제로 제거합니다.
+  // v011부터는 삼성/모바일 브라우저 등에 남아 있던 과거 DB URL을 강제로 제거합니다.
   // 근태 데이터 캐시는 유지하고, DB 연결 설정만 최신 기본 URL 기준으로 재정렬합니다.
   LEGACY_API_URL_KEYS.forEach((key) => {
     const value = localStorage.getItem(key);
@@ -701,7 +701,7 @@ async function loadFromSheets(options = {}) {
   const loading = startLoadingProgress('구글 스프레드시트 DB 불러오는 중');
   updateSyncStatus('Google Sheets에서 최신 데이터를 불러오는 중입니다...');
   try {
-    const response = await jsonpRequest(apiUrl, { action: 'load' });
+    const response = await requestSheets(apiUrl, { action: 'load' });
     if (!response || response.ok === false) throw new Error(response?.error || '시트 응답이 올바르지 않습니다.');
     if (!response.data) {
       finishLoadingProgress(loading, '구글 스프레드시트 DB에 저장된 데이터가 없습니다.', true);
@@ -749,7 +749,7 @@ async function saveToSheets(data) {
     await postFormToSheets(apiUrl, { action: 'save', token, payload });
     await delay(900);
 
-    const loaded = await jsonpRequest(apiUrl, { action: 'load' });
+    const loaded = await requestSheets(apiUrl, { action: 'load' });
     if (!loaded || loaded.ok === false) throw new Error(loaded?.error || '저장 후 확인 응답이 올바르지 않습니다.');
     if (!loaded.data) throw new Error('저장 후 Google Sheets에서 데이터를 다시 읽지 못했습니다.');
 
@@ -883,6 +883,64 @@ function delay(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+
+async function requestSheets(baseUrl, params = {}) {
+  try {
+    return await jsonpRequest(baseUrl, params);
+  } catch (firstError) {
+    updateSyncStatus(`JSONP 로드 실패. 모바일 브라우저 호환 방식으로 재시도합니다. (${firstError.message})`, true);
+    try {
+      return await iframeBridgeRequest(baseUrl, params, firstError);
+    } catch (secondError) {
+      const message = `스크립트 로드 실패: ${secondError.message || firstError.message}. Code.gs v011 배포, Apps Script URL, 브라우저 콘텐츠 차단 설정을 확인해 주세요.`;
+      throw new Error(message);
+    }
+  }
+}
+
+function iframeBridgeRequest(baseUrl, params = {}, firstError = null) {
+  return new Promise((resolve, reject) => {
+    const requestId = `wifeLeaveCalendarFrame_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+    const iframe = document.createElement('iframe');
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      reject(new Error(`iframe 브리지 응답 시간이 초과되었습니다${firstError ? ` / 1차 오류: ${firstError.message}` : ''}`));
+    }, 26000);
+
+    function cleanup() {
+      window.clearTimeout(timeout);
+      window.removeEventListener('message', onMessage);
+      iframe.remove();
+    }
+
+    function onMessage(event) {
+      const data = event.data;
+      if (!data || data.source !== 'wifeLeaveCalendarSheetsBridge' || data.requestId !== requestId) return;
+      cleanup();
+      if (data.error) reject(new Error(data.error));
+      else resolve(data.payload);
+    }
+
+    window.addEventListener('message', onMessage);
+
+    const url = new URL(baseUrl);
+    Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, String(value)));
+    url.searchParams.set('action', 'frame');
+    url.searchParams.set('op', String(params.action || 'load'));
+    url.searchParams.set('requestId', requestId);
+    url.searchParams.set('_', String(Date.now()));
+
+    iframe.style.display = 'none';
+    iframe.referrerPolicy = 'no-referrer-when-downgrade';
+    iframe.onerror = () => {
+      cleanup();
+      reject(new Error('iframe 브리지 로드에 실패했습니다.'));
+    };
+    iframe.src = url.toString();
+    document.body.appendChild(iframe);
+  });
+}
+
 function jsonpRequest(baseUrl, params = {}) {
   return new Promise((resolve, reject) => {
     const callbackName = `wifeLeaveCalendarJsonp_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
@@ -910,7 +968,7 @@ function jsonpRequest(baseUrl, params = {}) {
 
     script.onerror = () => {
       cleanup();
-      reject(new Error('스크립트 로드에 실패했습니다. Apps Script 배포 URL, 브라우저 캐시, 콘텐츠 차단 설정을 확인해 주세요.'));
+      reject(new Error('JSONP 스크립트 로드에 실패했습니다. 모바일 브라우저/콘텐츠 차단 또는 Apps Script URL 문제일 수 있습니다.'));
     };
     script.src = url.toString();
     document.head.appendChild(script);
